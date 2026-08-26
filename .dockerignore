@@ -1,0 +1,6 @@
+.git
+*.md
+*.sql
+*.code-workspace
+.deploy.log
+releases

@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    container_name: astalpin-app
+    networks:
+      - caddy_net
+
+networks:
+  caddy_net:
+    external: true
