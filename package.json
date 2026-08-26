@@ -1,6 +1,6 @@
 {
   "name": "astalpin-se",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "AST — Alpin Samverkansträning (statisk frontend, Supabase-backend)"
 }

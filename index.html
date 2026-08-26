@@ -402,12 +402,12 @@ textarea{resize:vertical;min-height:70px;max-height:110px}
     <div id="login-msg"></div>
     <div>
       <label>E-postadress</label>
-      <input type="email" id="login-email" placeholder="din@mail.se" autocomplete="email">
+      <input type="email" id="login-email" placeholder="din@mail.se" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()">
     </div>
     <div>
       <label>Lösenord</label>
       <div class="pw-wrap">
-        <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password">
+        <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         <button class="pw-toggle" onclick="togglePw('login-pw',this)" tabindex="-1">👁</button>
       </div>
     </div>
@@ -532,10 +532,50 @@ textarea{resize:vertical;min-height:70px;max-height:110px}
     <p style="font-size:13px;color:var(--muted);line-height:1.6">Ange din e-postadress så skickar vi en länk för att återställa ditt lösenord.</p>
     <div>
       <label>E-postadress</label>
-      <input type="email" id="forgot-email" placeholder="din@mail.se">
+      <input type="email" id="forgot-email" placeholder="din@mail.se" autocomplete="email" onkeydown="if(event.key==='Enter')doForgot()">
     </div>
     <button class="btn btn-primary auth-btn" onclick="doForgot()">Skicka återställningslänk</button>
     <button class="btn btn-ghost auth-btn" onclick="showView('view-login')">← Tillbaka till inloggning</button>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ VIEW: RESET PASSWORD ══ -->
+<div class="view" id="view-reset">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="auth-head">
+    <div class="auth-logo">
+      <svg width="64" height="64" viewBox="0 0 52 52" style="margin:0 auto 10px;display:block">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div style="font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:3px;color:#f0f4ff;line-height:1">AST</div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7888a0;margin-top:4px">Alpin Samverkansträning</div>
+    </div>
+    <div class="auth-sub">Välj ett nytt lösenord</div>
+  </div>
+  <div class="auth-body">
+    <div id="reset-msg"></div>
+    <div>
+      <label>Nytt lösenord</label>
+      <div class="pw-wrap">
+        <input type="password" id="reset-pw" placeholder="Minst 6 tecken" autocomplete="new-password">
+        <button class="pw-toggle" onclick="togglePw('reset-pw',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <div>
+      <label>Bekräfta lösenord</label>
+      <div class="pw-wrap">
+        <input type="password" id="reset-pw2" placeholder="Upprepa lösenordet" autocomplete="new-password">
+        <button class="pw-toggle" onclick="togglePw('reset-pw2',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <button class="btn btn-primary auth-btn" onclick="doResetPassword()">Spara nytt lösenord</button>
   </div>
 </div>
 </div>
@@ -1263,7 +1303,7 @@ function showView(id){
   var tabMap={'view-calendar':'nav-cal','view-event':'nav-cal','view-om':'nav-om','view-admin':'nav-konto'};
   if(tabMap[id]) document.querySelectorAll('.'+tabMap[id]).forEach(function(t){t.classList.add('active');});
   var nav=document.getElementById('global-nav');
-  var authViews=['view-login','view-register','view-forgot'];
+  var authViews=['view-login','view-register','view-forgot','view-reset'];
   if(nav) nav.style.display=authViews.includes(id)?'none':'block';
   if(id==='view-admin') renderAdmin();
   if(id==='view-register') document.getElementById('reg-admin-wrap').style.display='block';
@@ -1370,6 +1410,25 @@ async function doRegister(){
     setMsg('reg-msg','Nätverksfel — kontrollera din uppkoppling.');
     console.error('doRegister:',err);
   }
+}
+
+async function doResetPassword(){
+  const pw = document.getElementById('reset-pw').value;
+  const pw2 = document.getElementById('reset-pw2').value;
+  if(!pw || pw.length < 6){ setMsg('reset-msg','Lösenordet måste vara minst 6 tecken.'); return; }
+  if(pw !== pw2){ setMsg('reset-msg','Lösenorden matchar inte.'); return; }
+  setMsg('reset-msg','Sparar...', true);
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if(error){
+    setMsg('reset-msg', 'Kunde inte uppdatera lösenordet: ' + error.message);
+    return;
+  }
+  setMsg('reset-msg', '✅ Lösenordet är uppdaterat! Du loggas in nu...', true);
+  setTimeout(async ()=>{
+    const ok = await loadSession();
+    if(ok){ await loadAll(); initApp(); }
+    else { showView('view-login'); }
+  }, 1500);
 }
 
 async function doForgot(){
@@ -2555,11 +2614,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }
   sb.auth.onAuthStateChange(async (event, session)=>{
     if(event==='PASSWORD_RECOVERY'){
-      const newPw=prompt('Ange ditt nya lösenord:');
-      if(newPw){
-        const { error }=await sb.auth.updateUser({ password: newPw });
-        if(!error) alert('Lösenordet är uppdaterat! Logga in med det nya lösenordet.');
-      }
+      showView('view-reset');
     }
   });
 });

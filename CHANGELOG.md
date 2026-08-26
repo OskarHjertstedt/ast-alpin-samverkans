@@ -1,5 +1,17 @@
 # Changelog — astalpin.se
 
+## 0.3.1 — 2026-08-26
+- Riktig "återställ lösenord"-vy istället för en enkel webbläsardialog — ersätter
+  gamla `prompt()`-lösningen när man klickar en återställningslänk från mejl.
+- Enter-tangenten fungerar nu i inloggnings- och glömt lösenord-formulären.
+- Bakgrund: Oskar hade laddat upp dessa förbättringar direkt via GitHub utan
+  att de byggdes in i appen. Endast de här verifierat kompletta delarna är
+  inbyggda nu — hans övriga påbörjade arbete (återkommande träningar,
+  notispanel, "Mina anmälningar", nya profilfält) är medvetet **inte** med
+  än, eftersom det innehöll ofärdig/trasig kod (bl.a. odeklarerade variabler
+  som skulle kraschat anmälningsflödet) och kräver avstämning med honom samt
+  nya databaskolumner innan det kan driftsättas.
+
 ## 0.3.0 — 2026-08-26
 - Ny anmälan skickar nu ett bekräftelsemejl till den som gjorde anmälan
   (byggt som en databas-trigger + Edge Function i den self-hostade
