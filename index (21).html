@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="mobile-web-app-capable" content="yes">
+<title>AST — Alpin Samverkansträning</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06090f;--surface:#0d1220;--surface2:#152030;--surface3:#1c2a3e;
+  --border:#ffffff30;--border2:#ffffff50;--border3:#ffffff70;
+  --text:#ffffff;--muted:#b8cfe6;--muted2:#85a0bb;
+  --u10:#4d9fff;--u12:#2ecc71;--u14:#ff5252;--u16:#b0c4d8;
+  --accent:#60a5fa;--accent2:#93c5fd;
+  --success:#2ecc71;--danger:#ff5252;--warn:#ffb347;
+  --font-head:'Barlow Condensed',sans-serif;
+  --font-body:'Barlow',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:15px;line-height:1.5}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+
+/* ── TYPOGRAPHY ── */
+h1,h2,h3{font-family:var(--font-head);font-weight:800;letter-spacing:.5px}
+
+/* ── VIEWS ── */
+.view{display:none;min-height:100vh}
+.view.active{display:block}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;position:sticky;top:0;z-index:100}
+.logo{cursor:pointer;white-space:nowrap}
+.logo span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.user-chip{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 12px 4px 6px;font-size:13px;cursor:pointer}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:12px;color:#0a0f1e}
+.btn{font-family:var(--font-head);font-weight:700;font-size:14px;letter-spacing:.5px;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;transition:.15s;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.btn-primary{background:var(--accent);color:#0a0f1e}
+.btn-primary:hover{background:var(--accent2)}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--border3);color:var(--text)}
+.btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid #ef44441a}
+.btn-danger:hover{background:#991b1b}
+.btn-sm{font-size:12px;padding:5px 11px}
+
+/* ── PILL / BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;font-family:var(--font-head);letter-spacing:.5px;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+.badge-admin{background:#1e3a5f;color:#93c5fd;border:1px solid #3b82f630}
+
+/* ── LEGEND ── */
+.legend-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 1rem;display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.legend-bar::-webkit-scrollbar{display:none}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;font-family:var(--font-head);font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── YEAR NAV ── */
+.year-nav{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;border-bottom:1px solid var(--border);flex-wrap:nowrap;min-height:48px}
+.year-nav button{background:none;border:1px solid var(--border2);color:var(--muted);width:40px;height:40px;border-radius:8px;cursor:pointer;font-size:20px;font-family:var(--font-head);transition:.15s}
+.year-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.year-num{font-family:var(--font-head);font-weight:800;font-size:20px;letter-spacing:1px}
+
+/* ── CALENDAR ── */
+.cal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:1rem 1.25rem 80px}
+@media(max-width:680px){.cal-grid{grid-template-columns:repeat(2,1fr);gap:8px;padding:.75rem .75rem 5rem}}
+@media(max-width:400px){.cal-grid{grid-template-columns:repeat(2,1fr);gap:6px;padding:.5rem .5rem 5rem}}
+.month-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:visible}
+.month-head{padding:6px 8px;background:#1a2d45;font-family:var(--font-head);font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#dceeff}
+.m-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.dh{font-size:9px;font-weight:600;color:var(--muted);text-align:center;padding:5px 0;font-family:var(--font-head);letter-spacing:.3px;text-transform:uppercase}
+.day{padding:4px 2px 4px;display:flex;flex-direction:column;align-items:center;cursor:pointer;border-radius:4px;transition:.1s;position:relative;min-height:28px}
+.day:hover{background:var(--surface2)}
+.day-n{font-size:11px;color:var(--muted);font-weight:500;line-height:1.2;margin-bottom:2px}
+.day.today .day-n{color:var(--accent);font-weight:700}
+.day.has-ev .day-n{color:var(--text)}
+.day.empty{cursor:default}
+.day.empty:hover{background:transparent}
+/* One dot-row per event, stacked vertically */
+.ev-row{display:flex;gap:2px;align-items:center;justify-content:center;width:100%;margin-bottom:2px}
+.ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+/* +N overflow pill */
+.ev-more{font-family:var(--font-head);font-size:8px;font-weight:700;color:var(--muted);line-height:1;margin-bottom:1px}
+/* Hover tooltip */
+.day-tip{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;z-index:150;min-width:200px;max-width:280px;pointer-events:auto;box-shadow:0 8px 32px #000a}
+.day-tip.open{display:block}
+.day-tip-row{padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:7px}
+.day-tip-row:last-child{border-bottom:none}
+.day-tip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.day-tip-name{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.day-tip-sub{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:80px;right:16px;z-index:490;background:var(--accent);color:#0a0f1e;border:none;border-radius:50px;padding:13px 22px;font-family:var(--font-head);font-weight:800;font-size:15px;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 20px #3b82f640;transition:.2s;display:flex;align-items:center;gap:8px}
+.fab:hover{background:var(--accent2);transform:translateY(-2px)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:#000c;z-index:200;display:none;align-items:flex-end;justify-content:center;padding:0;overflow:hidden}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px 14px 0 0;width:100%;max-width:500px;margin:0;overflow:hidden;animation:slideUp .2s ease;display:flex;flex-direction:column;max-height:92vh}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+@media(min-width:601px){.overlay{align-items:center;padding:1rem}.modal{border-radius:14px;margin:auto;max-height:85vh}}
+.modal-head{padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--font-head);font-weight:900;font-size:18px;letter-spacing:.8px;text-transform:uppercase}
+.close-x{background:none;border:1px solid var(--border2);color:var(--muted);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.close-x:hover{border-color:var(--accent);color:var(--accent)}
+.modal-body{padding:18px;display:flex;flex-direction:column;gap:13px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}
+.modal-foot{padding:12px 18px;padding-bottom:max(12px,env(safe-area-inset-bottom,12px));border-top:2px solid var(--border2);display:flex;gap:8px;justify-content:flex-end;background:var(--surface);flex-shrink:0}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:11px;font-weight:600;color:#dceeff;letter-spacing:.6px;text-transform:uppercase;font-family:var(--font-head);display:block;margin-bottom:4px}
+input,textarea,select{width:100%;background:#0a1220;border:2px solid #2a4060;border-radius:8px;color:#ffffff;font-family:var(--font-body);font-size:16px;padding:11px 14px;outline:none;transition:.15s;-webkit-appearance:none;box-sizing:border-box}
+input[type="date"],input[type="time"]{color-scheme:dark}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #60a5fa15}
+select option{background:var(--surface)}
+textarea{resize:vertical;min-height:70px;max-height:110px}
+.char-c{font-size:11px;color:var(--muted);text-align:right;margin-top:2px}
+.err{font-size:11px;color:var(--danger);margin-top:3px}
+.ok{font-size:11px;color:var(--success);margin-top:3px}
+
+/* ── GROUPS GRID ── */
+.grp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.grp-item{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;cursor:pointer;transition:.15s;user-select:none}
+.grp-item:hover{border-color:var(--border3)}
+.grp-item.sel{border-color:var(--gc,#60a5fa);background:color-mix(in srgb,var(--gc,#60a5fa) 10%,transparent)}
+.grp-label{font-family:var(--font-head);font-weight:700;font-size:14px;letter-spacing:.5px}
+
+/* ── EVENT DETAIL ── */
+.ev-detail{padding:.75rem 1rem 80px;max-width:600px;margin:0 auto;color:var(--text)}
+.ev-back{background:none;border:none;color:var(--muted);cursor:pointer;font-family:var(--font-head);font-size:14px;display:flex;align-items:center;gap:6px;padding:0 0 1rem;transition:.15s}
+.ev-back:hover{color:var(--text)}
+.ev-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:1rem;flex-wrap:wrap}
+.ev-title{font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:.5px}
+.ev-meta{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+.ev-meta-row{display:flex;align-items:center;gap:10px;font-size:14px}
+.ev-meta-label{color:#c8dbed;min-width:90px;font-size:12px;font-family:var(--font-head);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.ev-info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-size:14px;color:var(--text);line-height:1.6;margin-bottom:1rem}
+.reg-section{margin-top:1.5rem}
+.reg-title{font-family:var(--font-head);font-weight:800;font-size:17px;letter-spacing:.5px;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.reg-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.reg-name{font-weight:500;font-size:14px}
+.reg-sub{font-size:12px;color:var(--muted);margin-top:1px}
+
+/* ── AUTH VIEWS ── */
+.auth-wrap{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:1rem;padding-top:max(2rem,env(safe-area-inset-top))}
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:400px;overflow:hidden;margin-bottom:2rem;box-sizing:border-box}
+.auth-head{padding:2rem 2rem 1rem;text-align:center}
+.auth-logo{text-align:center;margin-bottom:.5rem}
+.auth-sub{font-size:13px;color:var(--muted)}
+.auth-body{padding:1.25rem 1.5rem 1.5rem;display:flex;flex-direction:column;gap:13px}
+.auth-foot{padding:1rem 2rem;border-top:1px solid var(--border);text-align:center;font-size:13px;color:var(--muted)}
+.auth-foot a{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-foot a:hover{color:var(--accent2)}
+.auth-btn{width:100%;padding:14px;font-size:16px;border-radius:10px;margin-top:4px;min-height:50px}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.msg-box{border-radius:8px;padding:10px 14px;font-size:13px}
+.msg-success{background:#052e16;border:1px solid #16a34a30;color:#86efac}
+.msg-error{background:#450a0a;border:1px solid #ef44441a;color:#fca5a5}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;z-index:500;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ADMIN VIEW ── */
+.admin-section{padding:.75rem 1rem 80px;max-width:800px}
+.admin-title{font-family:var(--font-head);font-weight:900;font-size:22px;letter-spacing:.5px;margin-bottom:1rem}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px}
+.admin-table th{text-align:left;padding:8px 10px;font-family:var(--font-head);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.admin-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.admin-table tr:hover td{background:var(--surface2)}
+
+/* ── MOBILE MENU ── */
+@media(max-width:600px){.fab{bottom:80px;right:16px}.logo-sub{display:none}.view-toggle{gap:0}.modal-foot{flex-direction:column-reverse}.modal-foot .btn{width:100%;justify-content:center}}
+
+/* ── PASSWORD INPUT ── */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:40px}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:16px}
+
+/* ── GROUP TOGGLE ── */
+.grp-toggle{display:flex;gap:0;border:1px solid var(--border2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.grp-toggle-btn{flex:1;min-width:0;background:none;border:none;border-right:1px solid var(--border2);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;letter-spacing:.5px;padding:12px 4px;cursor:pointer;transition:.15s;text-align:center;white-space:nowrap;min-height:44px}
+.grp-toggle-btn:last-child{border-right:none}
+.grp-toggle-btn:hover{background:var(--surface2);color:var(--text)}
+.grp-toggle-btn.active{background:var(--accent);color:#0a0f1e}
+
+/* ── GROUP MISMATCH INFO ── */
+.grp-info-box{display:none;background:#0c1a2e;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px;margin-top:8px}
+.grp-info-box.show{display:block}
+.grp-info-title{font-family:var(--font-head);font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:#60a5fa;margin-bottom:5px}
+.grp-info-text{font-size:12px;color:#93c5fd;line-height:1.5}
+.grp-info-contact{font-size:12px;color:#7888a0;margin-top:6px;line-height:1.5}
+.grp-info-contact a{color:#60a5fa}
+
+/* ── ADMIN REG LIST ── */
+.reg-list-wrap{margin-top:2rem}
+.reg-list-ev{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.reg-list-ev-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:.1s}
+.reg-list-ev-head:hover{background:var(--surface2)}
+.reg-list-ev-title{font-family:var(--font-head);font-weight:800;font-size:15px;letter-spacing:.3px}
+.reg-list-ev-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.reg-list-ev-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.reg-count-badge{font-family:var(--font-head);font-weight:700;font-size:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:2px 10px;color:var(--muted)}
+.reg-list-body{display:none;border-top:1px solid var(--border);overflow-x:auto}
+.reg-list-body.open{display:block}
+.reg-full-table{width:100%;border-collapse:collapse;font-size:12px}
+.reg-full-table th{text-align:left;padding:7px 12px;font-family:var(--font-head);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2)}
+.reg-full-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.reg-full-table tr:last-child td{border-bottom:none}
+.reg-full-table tr:hover td{background:var(--surface2)}
+.grp-pill{font-family:var(--font-head);font-weight:700;font-size:10px;border-radius:20px;padding:2px 7px;display:inline-block}
+.export-btn{font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:.5px;padding:5px 12px;border-radius:6px;background:none;border:1px solid var(--border2);color:var(--muted);cursor:pointer;transition:.15s}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+.chevron{font-size:12px;color:var(--muted);transition:transform .2s}
+.chevron.open{transform:rotate(90deg)}
+
+/* ── OM AST PAGE ── */
+.om-body{padding:0 1rem 80px;max-width:600px;width:100%;margin:0 auto;box-sizing:border-box}
+.om-hero{background:linear-gradient(180deg,#0f1f3d 0%,var(--bg) 100%);padding:2rem 1rem 1.5rem;text-align:center}
+.om-hero-inner{display:inline-flex;align-items:center;gap:14px;text-align:left;margin-bottom:1rem}
+.om-hero-ast{font-family:var(--font-head);font-weight:900;font-size:36px;letter-spacing:3px;color:#f0f4ff;line-height:1;margin:0}
+.om-hero-full{font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#60a5fa;margin:.25rem 0 0}
+.om-lead{font-size:15px;color:#8898b0;line-height:1.6;margin:0}
+.om-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-top:1rem}
+.om-card-title{color:#ffffff;font-family:var(--font-head);font-weight:800;font-size:17px;letter-spacing:.3px;color:var(--text);margin:0 0 .75rem}
+.om-p{font-size:14px;color:#8898b0;line-height:1.7;margin:0}
+.om-p+.om-p{margin-top:.6rem}
+.om-quote-card{background:linear-gradient(135deg,#0f1f3d,#111827);border:1px solid #1e3a5f;border-left:4px solid #60a5fa;border-radius:12px;padding:1.25rem;margin-top:1rem}
+.om-quote-text{font-size:14px;color:#93c5fd;line-height:1.7;font-style:italic;margin:0}
+.om-steps{display:flex;flex-direction:column;gap:8px;margin-top:.75rem}
+.om-step{display:flex;gap:12px;align-items:flex-start}
+.om-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0a0f1e;font-family:var(--font-head);font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.om-step-text{font-size:14px;color:#8898b0;line-height:1.6}
+.om-step-text strong{color:var(--text)}
+.om-faq{display:flex;flex-direction:column;gap:6px;margin-top:.75rem}
+.om-faq-item{background:var(--surface2);border-radius:8px;padding:10px 14px}
+.om-faq-q{font-size:13px;font-weight:500;color:var(--text)}
+.om-faq-a{font-size:13px;color:#60a5fa;font-weight:600;margin-top:2px}
+.om-cta-card{background:linear-gradient(135deg,#0f1f3d,#1a2235);border:1px solid #1e3a5f;border-radius:12px;padding:1.5rem;margin-top:1rem;text-align:center}
+.om-cta-text{font-size:15px;color:#8898b0;line-height:1.6;margin:0 0 1rem}
+.om-cta-text strong{color:var(--text)}
+
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:.8;transform:scale(1.08)}}
+
+.gnav-tab{background:none;border:none;color:#c0d8f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;min-width:0;padding:8px 4px;cursor:pointer;font-family:var(--font-head);font-size:9px;letter-spacing:.3px;text-transform:uppercase;transition:color .15s;line-height:1.2;overflow:hidden}
+.gnav-tab:hover{color:var(--text)}
+.gnav-tab.active{color:#ffffff;text-shadow:0 0 12px #60a5fa88}
+.gnav-tab svg{stroke:currentColor;flex-shrink:0;stroke-width:2.5}
+.gnav-tab span{font-size:9px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media(min-width:600px){.gnav-tab{padding:10px 8px;font-size:10px;gap:4px}
+.gnav-tab svg{width:22px;height:22px}
+.gnav-tab span{font-size:10px}}
+@media(min-width:769px){.gnav-tab{padding:16px 28px;font-size:13px;flex-direction:row;gap:10px;flex:none;min-width:120px}
+.gnav-tab svg{width:22px;height:22px}
+.gnav-tab span{font-size:13px}}
+#global-nav>div{max-width:900px}
+.saved-skier-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;margin-bottom:8px}
+.skier-chip{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;cursor:pointer;transition:.15s}
+.skier-chip:hover{border-color:var(--accent)}
+.skier-chip-name{font-size:13px;font-weight:500;color:var(--text);flex:1}
+.skier-chip-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.skier-chip-grp{font-family:var(--font-head);font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--surface3);color:var(--muted);flex-shrink:0}
+.skier-divider{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin:4px 0}
+.skier-divider::before,.skier-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.my-skier-card{background:#0d1828;border:2px solid #253a55;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.my-skier-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--muted);flex-shrink:0}
+.my-skier-info{flex:1;min-width:0}
+.my-skier-name{font-size:14px;font-weight:500;color:var(--text)}
+.my-skier-sub{font-size:12px;color:#a8bdd4;margin-top:2px}
+.ical-grp-btn{background:var(--surface2);border:1.5px solid var(--border2);color:var(--muted);border-radius:20px;padding:7px 16px;font-family:var(--font-head);font-weight:700;font-size:13px;cursor:pointer;transition:.15s}
+.ical-grp-btn.active{background:var(--accent);border-color:var(--accent);color:#0a0f1e}
+.recur-day-btn{background:var(--surface2);border:1.5px solid var(--border2);color:var(--muted);border-radius:8px;padding:7px 10px;font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;transition:.15s;min-width:40px}
+.recur-day-btn.active{background:var(--accent);border-color:var(--accent);color:#0a0f1e}
+.grp-filter-btn{display:inline-flex;align-items:center;background:#152030;border:2px solid #2a4060;color:#c0d8f0;border-radius:20px;padding:7px 16px;font-family:var(--font-head);font-weight:800;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap;flex-shrink:0}
+.grp-filter-btn.active{background:#4d9ef8;border-color:#4d9ef8;color:#06090f;font-weight:900}
+.grp-filter-btn:hover:not(.active){color:#ffffff;border-color:#60a5fa}
+.club-chip{display:inline-flex;align-items:center;background:var(--surface2);border:1.5px solid var(--border2);color:var(--muted);border-radius:20px;padding:5px 12px;font-family:var(--font-head);font-weight:700;font-size:11px;cursor:pointer;transition:.15s;margin-right:6px;white-space:nowrap;vertical-align:middle}
+.club-chip.active{background:var(--accent);border-color:var(--accent);color:#0a0f1e}
+.club-chip:hover:not(.active){color:var(--text);border-color:var(--text)}
+/* ── SNOW BG DECO ── */
+.snow-deco{position:fixed;bottom:0;right:0;width:220px;opacity:.025;pointer-events:none;z-index:0}
+
+/* ── VIEW TOGGLE ── */
+.view-toggle{display:flex;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:2px;gap:2px}
+.vt-btn{background:none;border:none;color:var(--muted);width:32px;height:28px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.vt-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.vt-btn.active{background:var(--surface2);color:var(--accent)}
+.vt-btn:hover:not(.active){color:var(--text)}
+
+/* ── LIST VIEW ── */
+.list-body{padding:.75rem 1rem 80px;max-width:700px}
+.list-month{margin-bottom:2rem}
+.list-month-head{font-family:var(--font-head);font-weight:800;font-size:16px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding-bottom:.5rem;border-bottom:1px solid var(--border);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
+.list-month-count{font-size:12px;font-weight:600;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:2px 10px;color:var(--muted)}
+.list-ev-card{background:#10192c;border:1.5px solid #2a4060;border-radius:10px;padding:.85rem 1rem;margin-bottom:8px;cursor:pointer;transition:.15s;display:flex;gap:12px;align-items:flex-start}
+.list-ev-card:hover{border-color:var(--border2);background:var(--surface2)}
+.list-date-col{min-width:46px;text-align:center;background:var(--surface2);border-radius:7px;padding:6px 4px;border:1px solid var(--border)}
+.list-date-day{font-family:var(--font-head);font-weight:900;font-size:20px;line-height:1;color:var(--text)}
+.list-date-mon{font-family:var(--font-head);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.list-ev-body{flex:1;min-width:0}
+.list-ev-title{font-family:var(--font-head);font-weight:800;font-size:15px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-ev-sub{font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.list-ev-dots{display:flex;gap:4px;align-items:center;margin-top:5px}
+.list-ev-reg{font-family:var(--font-head);font-size:11px;font-weight:600;background:var(--surface3);border-radius:20px;padding:2px 9px;color:var(--muted);white-space:nowrap;margin-left:auto;align-self:center}
+.list-empty{font-size:13px;color:var(--muted);padding:.5rem 0}
+</style>
+  <!-- External libraries — loaded first -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ══ VIEW: VÄLKOMMEN (visas första gången) ══ -->
+<div class="view" id="view-welcome">
+  <div style="min-height:100svh;display:flex;flex-direction:column;overflow-y:auto">
+
+    <!-- HERO med åkarbild -->
+    <div class="om-hero" style="flex-shrink:0">
+      <div class="om-hero-bg" id="welcome-hero-bg" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,30,.15) 0%,rgba(10,15,30,.92) 72%,var(--bg) 100%)"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,30,.15) 0%,rgba(10,15,30,.92) 72%,var(--bg) 100%)"></div>
+      <div class="om-hero-content" style="padding:3rem 1.25rem 2rem">
+        <div style="display:inline-flex;align-items:center;gap:14px;margin-bottom:1rem">
+          <svg width="56" height="56" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="25" fill="rgba(10,15,30,.8)"/>
+            <circle cx="26" cy="26" r="24" fill="none" stroke="#60a5fa" stroke-width="1.5"/>
+            <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+            <polygon points="26,8 36,29 16,29" fill="#3b82f6"/>
+            <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+          </svg>
+          <div>
+            <div style="font-family:var(--font-head);font-weight:900;font-size:40px;letter-spacing:3px;color:#fff;line-height:1">AST</div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#93c5fd;margin-top:3px">Alpin Samverkansträning</div>
+          </div>
+        </div>
+        <p style="font-size:15px;color:#cbd5e1;line-height:1.6;max-width:380px;margin:0">Fler träningsmöjligheter med befintliga resurser — för alla åkare, i hela landet.</p>
+      </div>
+    </div>
+
+    <!-- INNEHÅLL -->
+    <div style="padding:1.5rem 1.25rem 7rem;max-width:600px;width:100%;margin:0 auto;box-sizing:border-box;flex:1">
+
+      <div style="background:#1a2235;border:1px solid #2d3f5e;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div style="font-family:var(--font-head);font-weight:800;font-size:18px;color:#f0f4ff;margin-bottom:.6rem">Vad är AST?</div>
+        <p style="font-size:14px;color:#c8d4e8;line-height:1.7;margin:0">Samverkansträning skapar fler träningsmöjligheter med befintliga resurser. Klubbar och enskilda delar med sig — åkare och föräldrar får nya vänner och fler träningar till låg kostnad.</p>
+      </div>
+
+      <div style="background:#0f1f3d;border:1px solid #2563eb;border-left:4px solid #60a5fa;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <p style="font-size:14px;color:#93c5fd;line-height:1.7;font-style:italic;margin:0">"Lotta hälsar på mormor &amp; morfar i Norrköping och vill hitta träning. Hon går in i appen och ser att NSK har träning. Vipps — vad kul att få hänga med nya kompisar i Yxbacken!"</p>
+      </div>
+
+      <div style="background:#1a2235;border:1px solid #2d3f5e;border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+        <div style="font-family:var(--font-head);font-weight:800;font-size:18px;color:#f0f4ff;margin-bottom:.75rem">Hur funkar det?</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;color:#fff;font-family:var(--font-head);font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div style="font-size:14px;color:#c8d4e8;line-height:1.6"><strong style="color:#f0f4ff">Skapa ett konto</strong> och lägg ut era träningar så fler kan anmäla sig.</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;color:#fff;font-family:var(--font-head);font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div style="font-size:14px;color:#c8d4e8;line-height:1.6"><strong style="color:#f0f4ff">Käppavgift</strong> max 200 kr/dag. Utöver trasséavgifter är deltagandet gratis.</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;color:#fff;font-family:var(--font-head);font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            <div style="font-size:14px;color:#c8d4e8;line-height:1.6"><strong style="color:#f0f4ff">Föräldrar</strong> förväntas hjälpa till med sättning, rivning och underhåll av bana.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(135deg,#0f1f3d,#1a2235);border:1px solid #2563eb;border-radius:12px;padding:1.5rem;text-align:center">
+        <div style="font-size:36px;margin-bottom:.75rem">💪</div>
+        <p style="font-size:15px;color:#c8d4e8;line-height:1.7;margin:0 0 1.25rem">Tillsammans skapar vi <strong style="color:#f0f4ff">1 000-tals träningsmöjligheter</strong> för <strong style="color:#f0f4ff">1 000-tals åkare</strong>.</p>
+        <button onclick="dismissWelcome()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:12px;padding:16px;font-family:var(--font-head);font-weight:800;font-size:17px;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 24px rgba(59,130,246,.5)">Kom igång med AST →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIEW: AUTH LOGIN ══ -->
+<div class="view active" id="view-login">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="auth-head">
+    <div class="auth-logo">
+      <svg width="64" height="64" viewBox="0 0 52 52" style="margin:0 auto 10px;display:block">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div style="font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:3px;color:#f0f4ff;line-height:1">AST</div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7888a0;margin-top:4px">Alpin Samverkansträning</div>
+    </div>
+    <div class="auth-sub">Samverkansträning — logga in för att fortsätta</div>
+  </div>
+  <div class="auth-body">
+    <div id="login-msg"></div>
+    <div>
+      <label>E-postadress</label>
+      <input type="email" id="login-email" placeholder="din@mail.se" autocomplete="email">
+    </div>
+    <div>
+      <label>Lösenord</label>
+      <div class="pw-wrap">
+        <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password">
+        <button class="pw-toggle" onclick="togglePw('login-pw',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <div style="text-align:right;margin-top:-4px">
+      <a style="font-size:13px;color:var(--accent);cursor:pointer" onclick="showView('view-forgot')">Glömt lösenordet?</a>
+    </div>
+    <button class="btn btn-primary auth-btn" onclick="doLogin()">Logga in</button>
+    <div class="divider">eller</div>
+    <button class="btn btn-ghost auth-btn" onclick="showView('view-register')">Skapa konto</button>
+  </div>
+  <div class="auth-foot">
+    Ingen admin? <a onclick="showView('view-register')">Registrera dig</a>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ VIEW: REGISTER ══ -->
+<div class="view" id="view-register">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="auth-head">
+    <div class="auth-logo">
+      <svg width="64" height="64" viewBox="0 0 52 52" style="margin:0 auto 10px;display:block">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div style="font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:3px;color:#f0f4ff;line-height:1">AST</div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7888a0;margin-top:4px">Alpin Samverkansträning</div>
+    </div>
+    <div class="auth-sub">Skapa ett konto</div>
+  </div>
+  <div class="auth-body">
+    <div id="reg-msg"></div>
+    <div class="form-row">
+      <div>
+        <label>Förnamn</label>
+        <input type="text" id="reg-fname" placeholder="Anna" autocomplete="given-name">
+      </div>
+      <div>
+        <label>Efternamn</label>
+        <input type="text" id="reg-lname" placeholder="Svensson" autocomplete="family-name">
+      </div>
+    </div>
+    <div>
+      <label>Klubb</label>
+      <input type="text" id="reg-club" placeholder="Åre Slalom SK" autocomplete="organization">
+    </div>
+    <div>
+      <label>E-postadress</label>
+      <input type="email" id="reg-email" placeholder="din@mail.se" autocomplete="email">
+    </div>
+    <div>
+      <label>Mobilnummer</label>
+      <input type="tel" id="reg-phone" placeholder="+46701234567" autocomplete="tel">
+    </div>
+    <div>
+      <label>Lösenord (minst 6 tecken)</label>
+      <div class="pw-wrap">
+        <input type="password" id="reg-pw" placeholder="••••••••" autocomplete="new-password">
+        <button class="pw-toggle" onclick="togglePw('reg-pw',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <div>
+      <label>Bekräfta lösenord</label>
+      <div class="pw-wrap">
+        <input type="password" id="reg-pw2" placeholder="••••••••" autocomplete="new-password">
+        <button class="pw-toggle" onclick="togglePw('reg-pw2',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <div id="reg-admin-wrap" style="display:none">
+      <label>Adminkod <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(valfritt)</span></label>
+      <div class="pw-wrap">
+        <input type="password" id="reg-admincode" placeholder="Lämna tomt om ej admin" autocomplete="off">
+        <button class="pw-toggle" onclick="togglePw('reg-admincode',this)" tabindex="-1">👁</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Ange adminkoden om du ska ha administratörsbehörighet.</div>
+    </div>
+    <div id="consent-row" style="background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:border-color .15s" onclick="var cb=document.getElementById('reg-consent');cb.checked=!cb.checked;cb.dispatchEvent(new Event('change'))">
+      <div style="display:flex;align-items:flex-start;gap:12px;pointer-events:none">
+        <div id="consent-visual" style="width:22px;height:22px;min-width:22px;border:2px solid #4b5563;border-radius:5px;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s">
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none"><polyline id="consent-tick" points="1.5,5 5,8.5 11.5,1.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none"/></svg>
+        </div>
+        <input type="checkbox" id="reg-consent" style="display:none;accent-color:var(--accent)" onchange="var v=document.getElementById('consent-visual');var t=document.getElementById('consent-tick');var r=document.getElementById('consent-row');if(this.checked){v.style.background='#3b82f6';v.style.borderColor='#3b82f6';t.style.display='block';r.style.borderColor='#3b82f6';r.style.background='rgba(59,130,246,.06)';}else{v.style.background='transparent';v.style.borderColor='#4b5563';t.style.display='none';r.style.borderColor='var(--border2)';r.style.background='var(--surface2)';}">
+        <span style="font-size:13px;color:var(--muted);line-height:1.6;font-family:var(--font-body)">Jag godkänner integritetspolicyn och förstår att mina uppgifter används för träningsanmälningar.</span>
+      </div>
+      <button type="button" onclick="event.stopPropagation();document.getElementById('modal-privacy').classList.add('open')" style="background:none;border:none;color:#3b82f6;font-size:13px;cursor:pointer;padding:0;text-align:left;text-decoration:underline;font-family:var(--font-body);pointer-events:auto">Läs integritetspolicyn →</button>
+    </div>
+    <div class="err" id="err-consent" style="font-size:12px;color:var(--danger);min-height:16px"></div>
+    <button class="btn btn-primary auth-btn" onclick="doRegister()">Registrera</button>
+  </div>
+  <div class="auth-foot">
+    Har du redan konto? <a onclick="showView('view-login')">Logga in</a>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ VIEW: FORGOT PASSWORD ══ -->
+<div class="view" id="view-forgot">
+<div class="auth-wrap">
+<div class="auth-card">
+  <div class="auth-head">
+    <div class="auth-logo">
+      <svg width="64" height="64" viewBox="0 0 52 52" style="margin:0 auto 10px;display:block">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div style="font-family:var(--font-head);font-weight:900;font-size:26px;letter-spacing:3px;color:#f0f4ff;line-height:1">AST</div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7888a0;margin-top:4px">Alpin Samverkansträning</div>
+    </div>
+    <div class="auth-sub">Återställ lösenord</div>
+  </div>
+  <div class="auth-body">
+    <div id="forgot-msg"></div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6">Ange din e-postadress så skickar vi en länk för att återställa ditt lösenord.</p>
+    <div>
+      <label>E-postadress</label>
+      <input type="email" id="forgot-email" placeholder="din@mail.se">
+    </div>
+    <button class="btn btn-primary auth-btn" onclick="doForgot()">Skicka återställningslänk</button>
+    <button class="btn btn-ghost auth-btn" onclick="showView('view-login')">← Tillbaka till inloggning</button>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══ VIEW: CALENDAR ══ -->
+<div class="view" id="view-calendar">
+  <div class="topbar">
+    <div class="logo" onclick="showView('view-calendar')" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+      <svg width="28" height="28" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div>
+        <div style="font-family:var(--font-head);font-weight:900;font-size:18px;letter-spacing:2px;color:#f0f4ff;line-height:1">AST</div>
+        <div class="logo-sub" style="font-family:var(--font-head);font-weight:700;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#7888a0;line-height:1;margin-top:2px">Alpin Samverkansträning</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="notif-btn" onclick="toggleNotifPanel()" style="display:none;position:relative;background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ef4444;border-radius:50%;border:2px solid var(--surface)"></span></button>
+      <div class="view-toggle">
+        <button class="vt-btn active" id="vt-cal" onclick="setCalView('cal')" title="Kalendervy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        </button>
+        <button class="vt-btn" id="vt-list" onclick="setCalView('list')" title="Listvy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="5" y2="6"/><line x1="3" y1="12" x2="5" y2="12"/><line x1="3" y1="18" x2="5" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="user-chip" id="user-chip" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-name-short" style="font-size:13px">Konto</span>
+      </div>
+      <div id="user-menu" style="display:none;position:absolute;top:52px;right:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;min-width:220px;z-index:200;overflow:visible">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:500" id="user-menu-name"></div>
+          <div style="font-size:11px;color:var(--muted)" id="user-menu-club"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="user-menu-email"></div>
+          <div id="user-menu-admincode" style="display:none;margin-top:7px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;font-family:var(--font-head)">Adminkod</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span id="user-menu-code-val" style="font-family:var(--font-head);font-weight:700;font-size:14px;letter-spacing:2px;color:var(--accent);flex:1">••••••••</span>
+              <button onclick="toggleCodeVisibility()" id="code-eye-btn" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">👁</button>
+              <button onclick="copyAdminCode()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;font-family:var(--font-head);font-weight:600;padding:0" title="Kopiera">Kopiera</button>
+            </div>
+          </div>
+        </div>
+        <button onclick="showView('view-admin');toggleUserMenu()" style="width:100%;text-align:left;background:none;border:none;color:var(--text);padding:9px 14px;font-size:13px;cursor:pointer;font-family:var(--font-body)" id="admin-menu-item">⚙ Admin-panel</button>
+        <button onclick="doLogout()" style="width:100%;text-align:left;background:none;border:none;color:var(--danger);padding:9px 14px;font-size:13px;cursor:pointer;font-family:var(--font-body)">↩ Logga ut</button>
+        <button onclick="confirmDeleteAccount()" style="width:100%;text-align:left;background:none;border:none;color:#991b1b;padding:9px 14px;font-size:12px;cursor:pointer;font-family:var(--font-body);border-top:1px solid var(--border)">Radera mitt konto</button>
+      </div>
+    </div>
+  </div>
+  <div class="legend-bar">
+    <div class="legend-item"><div class="leg-dot" style="background:var(--u10)"></div>U10 Blå</div>
+    <div class="legend-item"><div class="leg-dot" style="background:var(--u12)"></div>U12 Grön</div>
+    <div class="legend-item"><div class="leg-dot" style="background:var(--u14)"></div>U14 Röd</div>
+    <div class="legend-item"><div class="leg-dot" style="background:var(--u16)"></div>U16 Svart</div>
+  </div>
+  <div class="year-nav" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="changeYear(-1)">‹</button>
+      <span class="year-num" id="cal-year">2026</span>
+      <button onclick="changeYear(1)">›</button>
+    </div>
+    <button onclick="openIcalModal()" style="display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--muted);cursor:pointer;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:.3px;transition:.15s" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+      iCal
+    </button>
+  </div>
+
+  <!-- KOMBINERAT FILTER -->
+  <div id="cal-filter-bar" style="border-bottom:2px solid #2a4060;background:#0d1220;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <!-- Klubb dropdown -->
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <span style="font-family:var(--font-head);font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c0d8f0;white-space:nowrap">Klubb</span>
+      <select id="club-select" onchange="setClubFilterFromSelect(this.value)" style="background:#152030;border:2px solid #2a4060;border-radius:8px;color:#ffffff;font-family:var(--font-head);font-weight:700;font-size:13px;padding:7px 12px;cursor:pointer;-webkit-appearance:none;appearance:none;min-width:140px;max-width:220px">
+        <option value="">Alla klubbar</option>
+      </select>
+    </div>
+    <!-- Divider -->
+    <div style="width:1px;height:28px;background:#2a4060;flex-shrink:0"></div>
+    <!-- Grupper -->
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">
+      <span style="font-family:var(--font-head);font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#c0d8f0;white-space:nowrap;flex-shrink:0">Grupp</span>
+      <button class="grp-filter-btn active" data-grp="" onclick="setGrpFilter(this)">Alla</button>
+      <button class="grp-filter-btn" data-grp="U10" onclick="setGrpFilter(this)">U10</button>
+      <button class="grp-filter-btn" data-grp="U12" onclick="setGrpFilter(this)">U12</button>
+      <button class="grp-filter-btn" data-grp="U14" onclick="setGrpFilter(this)">U14</button>
+      <button class="grp-filter-btn" data-grp="U16" onclick="setGrpFilter(this)">U16</button>
+    </div>
+  </div>
+
+  <!-- AST INFO BAR -->
+  <div onclick="showView('view-om')" style="cursor:pointer;background:#0f1f3d;border-bottom:1px solid #1e3a5f;display:flex;align-items:center;justify-content:space-between;padding:10px 1rem;gap:8px">
+    <span style="font-family:var(--font-head);font-weight:700;font-size:13px;letter-spacing:.3px;color:#93c5fd">Vad är Alpin Samverkansträning?</span>
+    <span style="font-family:var(--font-head);font-weight:700;font-size:12px;color:#60a5fa;white-space:nowrap;flex-shrink:0">Läs mer →</span>
+  </div>
+  <!-- Calendar grid pane -->
+  <div id="pane-cal">
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+  <!-- List pane -->
+  <div id="pane-list" style="display:none">
+    <div class="list-body" id="list-body"></div>
+  </div>
+  <button class="fab" onclick="openAddEvent()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ny träning</button>
+</div>
+
+<!-- ══ VIEW: EVENT DETAIL ══ -->
+<div class="view" id="view-event">
+  <div class="topbar">
+    <div class="logo" onclick="showView('view-calendar')" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+      <svg width="28" height="28" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div>
+        <div style="font-family:var(--font-head);font-weight:900;font-size:18px;letter-spacing:2px;color:#f0f4ff;line-height:1">AST</div>
+        <div class="logo-sub" style="font-family:var(--font-head);font-weight:700;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#7888a0;line-height:1;margin-top:2px">Alpin Samverkansträning</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="goBack()">← Tillbaka</button>
+    </div>
+  </div>
+  <div class="ev-detail" id="ev-detail-body"></div>
+</div>
+
+<!-- ══ VIEW: ADMIN ══ -->
+<div class="view" id="view-admin">
+  <div class="topbar">
+    <div class="logo" onclick="showView('view-calendar')" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+      <svg width="28" height="28" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div>
+        <div style="font-family:var(--font-head);font-weight:900;font-size:18px;letter-spacing:2px;color:#f0f4ff;line-height:1">AST</div>
+        <div class="logo-sub" style="font-family:var(--font-head);font-weight:700;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#7888a0;line-height:1;margin-top:2px">Alpin Samverkansträning</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="goBack()">← Tillbaka</button>
+    </div>
+  </div>
+  <div class="admin-section" id="admin-body"></div>
+</div>
+
+<!-- ══ MODAL: ADD/EDIT EVENT ══ -->
+<div class="overlay" id="modal-event">
+<div class="modal">
+  <div class="modal-head">
+    <span class="modal-title" id="modal-event-title">Ny träning</span>
+    <button class="close-x" onclick="closeModal('modal-event')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="ev-id">
+    <div>
+      <label>Grupper</label>
+      <div class="grp-grid">
+        <div class="grp-item" data-g="U10" style="--gc:var(--u10)" onclick="toggleGrp(this)"><div class="leg-dot" style="background:var(--u10)"></div><span class="grp-label">U10</span></div>
+        <div class="grp-item" data-g="U12" style="--gc:var(--u12)" onclick="toggleGrp(this)"><div class="leg-dot" style="background:var(--u12)"></div><span class="grp-label">U12</span></div>
+        <div class="grp-item" data-g="U14" style="--gc:var(--u14)" onclick="toggleGrp(this)"><div class="leg-dot" style="background:var(--u14)"></div><span class="grp-label">U14</span></div>
+        <div class="grp-item" data-g="U16" style="--gc:var(--u16)" onclick="toggleGrp(this)"><div class="leg-dot" style="background:var(--u16)"></div><span class="grp-label">U16</span></div>
+      </div>
+      <div class="err" id="err-grp"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Från datum</label><input type="date" id="ev-from"><div class="err" id="err-date"></div></div>
+      <div><label>Till datum</label><input type="date" id="ev-to"></div>
+    </div>
+    <div><label>Backe / Ort</label><input type="text" id="ev-venue" placeholder="t.ex. Åre, Björnen, Romme Alpin" maxlength="80"></div>
+    <div><label>Arrangör (klubb / person)</label><input type="text" id="ev-org" placeholder="Klubb eller namn" maxlength="80" list="clubs-list" autocomplete="organization"></div>
+    <div class="form-row">
+      <div><label>E-post</label><input type="email" id="ev-email" placeholder="kontakt@klubb.se"></div>
+      <div><label>Telefon</label><input type="tel" id="ev-phone" placeholder="+46..."></div>
+    </div>
+    <div><label>WhatsApp-länk (valfritt)</label><input type="url" id="ev-wa" placeholder="https://chat.whatsapp.com/..."></div>
+    <div>
+      <label>Information</label>
+      <textarea id="ev-info" maxlength="200" placeholder="Kort beskrivning av träningen..."></textarea>
+      <div class="char-c"><span id="ev-info-c">0</span>/200</div>
+    </div>
+  </div>
+
+  <!-- ÅTERKOMMANDE TRÄNING -->
+  <div style="padding:0 18px 4px">
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:14px;color:var(--text)">Återkommande träning</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Skapar automatiskt flera träningar</div>
+        </div>
+        <div id="recur-toggle-wrap" onclick="toggleRecurring()" style="width:44px;height:24px;border-radius:12px;background:var(--border2);cursor:pointer;position:relative;transition:.2s;flex-shrink:0">
+          <div id="recur-toggle-knob" style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:.2s;box-shadow:0 1px 4px #0004"></div>
+        </div>
+      </div>
+      <div id="recur-options" style="display:none;flex-direction:column;gap:12px">
+        <div>
+          <label class="form-label">Upprepas varje</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+            <button class="recur-day-btn" data-day="1" onclick="toggleRecurDay(this)">Mån</button>
+            <button class="recur-day-btn" data-day="2" onclick="toggleRecurDay(this)">Tis</button>
+            <button class="recur-day-btn" data-day="3" onclick="toggleRecurDay(this)">Ons</button>
+            <button class="recur-day-btn" data-day="4" onclick="toggleRecurDay(this)">Tor</button>
+            <button class="recur-day-btn" data-day="5" onclick="toggleRecurDay(this)">Fre</button>
+            <button class="recur-day-btn" data-day="6" onclick="toggleRecurDay(this)">Lör</button>
+            <button class="recur-day-btn" data-day="0" onclick="toggleRecurDay(this)">Sön</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Slutdatum för upprepning</label>
+          <input type="date" id="recur-until" class="form-input" oninput="updateRecurPreview()" style="max-width:200px">
+        </div>
+        <div id="recur-preview" style="display:none;font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;line-height:1.8"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal('modal-event')">Avbryt</button>
+    <button class="btn btn-primary" onclick="saveEvent()">Spara träning</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL: REGISTER SKIER ══ -->
+<div class="overlay" id="modal-reg">
+<div class="modal">
+  <div class="modal-head">
+    <span class="modal-title">Anmäl åkare</span>
+    <button class="close-x" onclick="closeModal('modal-reg')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="reg-ev-id">
+    <div id="saved-skiers-section" style="display:none"><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-family:var(--font-head);margin-bottom:.5rem">Mina sparade åkare</div><div class="saved-skier-list" id="saved-skier-list"></div><div class="skier-divider">eller fyll i ny åkare</div></div>
+    <div style="padding:.5rem 0 .25rem;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-family:var(--font-head);margin-bottom:.75rem">Åkare</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="form-row">
+          <div><label>Förnamn</label><input type="text" id="reg-fname-f" placeholder="Emma" maxlength="50" autocomplete="given-name"></div>
+          <div><label>Efternamn</label><input type="text" id="reg-lname-f" placeholder="Lindqvist" maxlength="50" autocomplete="family-name"></div>
+        </div>
+        <div><label>Klubb</label><input type="text" id="reg-club-f" placeholder="Åre Slalom SK" maxlength="80" autocomplete="organization"></div>
+        <div>
+          <label>Åldersgrupp</label>
+          <div class="grp-toggle" id="grp-toggle-wrap">
+            <button class="grp-toggle-btn" data-grp="U8"   onclick="selectGrp(this)">U8</button>
+            <button class="grp-toggle-btn" data-grp="U10"  onclick="selectGrp(this)">U10</button>
+            <button class="grp-toggle-btn" data-grp="U12"  onclick="selectGrp(this)">U12</button>
+            <button class="grp-toggle-btn" data-grp="U14"  onclick="selectGrp(this)">U14</button>
+            <button class="grp-toggle-btn" data-grp="U16"  onclick="selectGrp(this)">U16</button>
+            <button class="grp-toggle-btn" data-grp="U17+" onclick="selectGrp(this)">U17+</button>
+          </div>
+          <div class="grp-info-box" id="grp-mismatch-box">
+            <div class="grp-info-title">Obs — annan åldersgrupp</div>
+            <div class="grp-info-text" id="grp-mismatch-text"></div>
+            <div class="grp-info-contact" id="grp-mismatch-contact"></div>
+          </div>
+          <div class="err" id="err-grp-reg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:.75rem 0 .25rem">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-family:var(--font-head);margin-bottom:.75rem">Målsman / kontaktperson</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="form-row">
+          <div><label>Förnamn</label><input type="text" id="reg-guardian-fname" placeholder="Anders" maxlength="50"></div>
+          <div><label>Efternamn</label><input type="text" id="reg-guardian-lname" placeholder="Lindqvist" maxlength="50"></div>
+        </div>
+        <div><label>Telefon</label><input type="tel" id="reg-guardian-phone" placeholder="+46 70 123 45 67" autocomplete="tel"></div>
+      </div>
+    </div>
+
+    <div id="save-skier-wrap" style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 12px;cursor:pointer;transition:.15s" onclick="toggleSaveSkierCheckbox()">
+      <div id="save-skier-box" style="width:20px;height:20px;border-radius:4px;border:2px solid var(--border2);background:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s">
+        <svg id="save-skier-check" width="12" height="12" viewBox="0 0 12 12" fill="none" style="display:none"><polyline points="1.5,6 5,9.5 10.5,2.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <input type="checkbox" id="reg-save-skier" style="display:none">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--font-body)">Spara åkaren</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">Lägg till i Mina åkare för snabb anmälan nästa gång</div>
+      </div>
+    </div>
+    <div class="err" id="err-reg"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal('modal-reg')">Avbryt</button>
+    <button class="btn btn-primary" onclick="saveRegistration()">Anmäl åkare</button>
+  </div>
+</div>
+</div>
+
+<!-- TOAST -->
+
+<div class="toast" id="toast"></div>
+
+<!-- SNOW DECO -->
+<!-- ══ VIEW: OM AST ══ -->
+<div class="view" id="view-om">
+  <div class="topbar">
+    <div class="logo" onclick="showView('view-om')" style="display:flex;align-items:center;gap:9px;cursor:pointer">
+      <svg width="28" height="28" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div>
+        <div style="font-family:var(--font-head);font-weight:900;font-size:18px;letter-spacing:2px;color:#f0f4ff;line-height:1">AST</div>
+        <div class="logo-sub" style="font-family:var(--font-head);font-weight:700;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#7888a0;line-height:1;margin-top:2px">Alpin Samverkansträning</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="goBack()">← Tillbaka</button>
+    </div>
+  </div>
+
+  <!-- HERO — full width, gradient bg -->
+  <div class="om-hero">
+    <div class="om-hero-inner">
+      <svg width="56" height="56" viewBox="0 0 52 52" style="flex-shrink:0">
+        <circle cx="26" cy="26" r="25" fill="#0d1729"/>
+        <circle cx="26" cy="26" r="24" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <polygon points="26,8 44,40 8,40" fill="#1e3a5f"/>
+        <polygon points="26,8 36,29 16,29" fill="#2563eb"/>
+        <polygon points="26,8 30,17 22,17" fill="#ffffff"/>
+      </svg>
+      <div>
+        <div class="om-hero-ast">AST</div>
+        <div class="om-hero-full">Alpin Samverkansträning</div>
+      </div>
+    </div>
+    <p class="om-lead">Fler träningsmöjligheter med befintliga resurser — för alla åkare, i hela landet.</p>
+  </div>
+
+  <!-- SCROLLABLE CONTENT -->
+  <div class="om-body">
+
+    <div class="om-card">
+      <div class="om-card-title">Vad är AST?</div>
+      <p class="om-p">Samverkansträning skapar fler träningsmöjligheter med befintliga resurser och ger mer variation för de som vill åka mer än vad den egna klubben kan erbjuda. Det ger möjlighet att hitta träning där man är — till en låg kostnad.</p>
+      <p class="om-p">Konceptet bygger på att klubbar och enskilda personer som arrangerar träning delar med sig och hjälps åt. Åkare och föräldrar får nya vänner, bygger relationer och skapar fler träningsmöjligheter för alla.</p>
+    </div>
+
+    <div class="om-quote-card">
+      <p class="om-quote-text">"Lotta hälsar på mormor &amp; morfar i Norrköping och vill hitta någonstans att vara med och träna. Hon går in i appen och ser att NSK har träning. Vipps — vad kul det blev att få hänga med nya kompisar i Yxbacken!"</p>
+    </div>
+
+    <div class="om-card">
+      <div class="om-card-title">Hur funkar det?</div>
+      <div class="om-steps">
+        <div class="om-step"><div class="om-step-num">1</div><div class="om-step-text"><strong>Skapa ett konto</strong> och lägg ut era träningstillfällen så att fler kan anmäla sig.</div></div>
+        <div class="om-step"><div class="om-step-num">2</div><div class="om-step-text"><strong>Käppavgift</strong> max 200 kr/dag. Utöver trasséavgifter ska deltagandet vara gratis.</div></div>
+        <div class="om-step"><div class="om-step-num">3</div><div class="om-step-text"><strong>Föräldrar</strong> förväntas hjälpa till med sättning, rivning och underhåll av bana.</div></div>
+        <div class="om-step"><div class="om-step-num">4</div><div class="om-step-text"><strong>Anmäl åkare</strong> direkt i appen — snabbt och enkelt.</div></div>
+      </div>
+    </div>
+
+    <div class="om-card">
+      <div class="om-card-title">Vanliga frågor</div>
+      <div class="om-faq">
+        <div class="om-faq-item"><div class="om-faq-q">Blir det fullt?</div><div class="om-faq-a">Oftast inte!</div></div>
+        <div class="om-faq-item"><div class="om-faq-q">Mer träning till lägre kostnad?</div><div class="om-faq-a">Ja!</div></div>
+        <div class="om-faq-item"><div class="om-faq-q">Åker mindre klubbar snålskjuts?</div><div class="om-faq-a">Inte om alla hjälper till — då blir det alltid win-win.</div></div>
+      </div>
+    </div>
+
+    <div class="om-card" style="margin-top:1rem"><div class="om-card-title" style="font-size:14px">Dataskydd &amp; GDPR</div><p class="om-p">AST lagrar bara uppgifter som behövs för träningsanmälan. Sparade åkare är privata — ingen annan kan se dem. Du kan ta bort dina uppgifter när som helst via Konto-sidan.</p></div>
+
+    <div class="om-cta-card">
+      <p class="om-cta-text">💪 Tillsammans kan vi skapa <strong>1 000-tals träningsmöjligheter</strong> för <strong>1 000-tals åkare</strong>.</p>
+      <button class="btn btn-primary" style="width:100%;font-size:15px;padding:14px;border-radius:10px" onclick="showView('view-calendar')">Gå till träningsappen →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRIVACY MODAL -->
+<div class="overlay" id="modal-privacy">
+<div class="modal" style="border-radius:14px;margin:auto">
+  <div class="modal-head"><span class="modal-title">Integritetspolicy</span><button class="close-x" onclick="closeModal('modal-privacy')">&#10005;</button></div>
+  <div class="modal-body">
+    <p style="font-size:12px;color:var(--muted)">Senast uppdaterad: 2025</p>
+    <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Personuppgiftsansvarig</div>
+    <p style="font-size:13px;color:var(--muted)">AST &mdash; Alpin Samverkansstr&auml;ning.</p>
+    <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Vad samlar vi in?</div>
+    <p style="font-size:13px;color:var(--muted)">Namn, e-post och klubb vid registrering. &Aring;karens namn, &aring;ldersgrupp och m&aring;lsmans telefon vid anm&auml;lan.</p>
+    <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Varf&ouml;r?</div>
+    <p style="font-size:13px;color:var(--muted)">Uteslutande f&ouml;r tr&auml;ningsadministration inom AST. Delas inte med tredje part.</p>
+    <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Dina r&auml;ttigheter (GDPR)</div>
+    <p style="font-size:13px;color:var(--muted)">Du kan n&auml;r som helst radera ditt konto och all data via Konto-sidan. Du har r&auml;tt till r&auml;ttelse och tillg&aring;ng till dina uppgifter.</p>
+    <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Lagring</div>
+    <p style="font-size:13px;color:var(--muted)">Data lagras hos Supabase i EU (Irland). Appen hostas p&aring; Netlify.</p>
+  </div>
+  <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal('modal-privacy')">St&auml;ng</button></div>
+</div>
+</div>
+
+<!-- NOTIS-PANEL -->
+<div id="notif-panel" style="display:none;position:fixed;top:56px;right:12px;width:300px;max-width:calc(100vw - 24px);background:var(--surface2);border:1px solid var(--border2);border-radius:12px;z-index:600;box-shadow:0 8px 32px #0008;overflow:hidden">
+  <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <span style="font-family:var(--font-head);font-weight:700;font-size:14px">Notiser</span>
+    <button onclick="clearNotifs()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-head);font-weight:600">Rensa alla</button>
+  </div>
+  <div id="notif-list" style="max-height:320px;overflow-y:auto"></div>
+  <div id="notif-empty" style="padding:1rem;text-align:center;font-size:13px;color:var(--muted)">Inga notiser än</div>
+</div>
+
+<!-- ICAL EXPORT MODAL -->
+<div class="overlay" id="modal-ical">
+<div class="modal">
+  <div class="modal-head">
+    <span class="modal-title">Exportera till kalender</span>
+    <button class="close-x" onclick="closeModal('modal-ical')">&#10005;</button>
+  </div>
+  <div class="modal-body">
+    <p style="font-size:13px;color:var(--muted);line-height:1.6">Välj åldersgrupper — filen öppnas i din kalender-app (iPhone, Google Calendar, Outlook m.fl.).</p>
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-family:var(--font-head);margin-bottom:8px">Åldersgrupper</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="ical-grp-btn active" data-grp="U10" onclick="toggleIcalGrp(this)">U10</button>
+        <button class="ical-grp-btn active" data-grp="U12" onclick="toggleIcalGrp(this)">U12</button>
+        <button class="ical-grp-btn active" data-grp="U14" onclick="toggleIcalGrp(this)">U14</button>
+        <button class="ical-grp-btn active" data-grp="U16" onclick="toggleIcalGrp(this)">U16</button>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:60px">
+      <div id="ical-preview" style="font-size:12px;color:var(--muted);line-height:1.8"></div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal('modal-ical')">Avbryt</button>
+    <button class="btn btn-primary" onclick="downloadIcal()">Ladda ner .ics</button>
+  </div>
+</div>
+</div>
+
+<!-- GLOBAL NAV -->
+<nav id="global-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0a1020;border-top:2px solid #3b6ea8;z-index:500;padding:4px 0 env(safe-area-inset-bottom,8px);backdrop-filter:blur(16px);box-shadow:0 -2px 16px rgba(0,0,0,.4)">
+  <div style="display:flex;align-items:stretch;width:100%;max-width:640px;margin:0 auto">
+    <button class="gnav-tab nav-cal" onclick="setCalView('cal')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span>Kalender</span></button>
+    <button class="gnav-tab nav-cal" onclick="setCalView('list')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="5" y2="6"/><line x1="3" y1="12" x2="5" y2="12"/><line x1="3" y1="18" x2="5" y2="18"/></svg><span>Lista</span></button>
+    <button class="gnav-tab" onclick="openAddEvent()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Ny träning</span></button>
+    <button class="gnav-tab nav-om" onclick="showView('view-om')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>Om AST</span></button>
+    <button class="gnav-tab nav-konto" onclick="showView('view-admin')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Konto</span></button>
+  </div>
+</nav>
+
+<datalist id="clubs-list"></datalist>
+
+<svg class="snow-deco" viewBox="0 0 200 160" fill="white">
+  <polygon points="100,10 180,150 20,150"/>
+  <polygon points="60,40 130,150 0,150" opacity=".6"/>
+  <polygon points="140,50 200,150 90,150" opacity=".4"/>
+</svg>
+
+<script>
+// ══ STATE ══
+const MONTHS = ['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+const DAYS = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+const GRP_COLORS = {U10:'#3b82f6',U12:'#22c55e',U14:'#ef4444',U16:'#94a3b8'};
+
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = 'https://bvgwruoyydjiiboasbkt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ioiQN45IPXHP8J3-srVtWQ_KFiAPQbJ';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Security helpers
+function esc(s){var t=String(s||'');t=t.split('&').join('&amp;');t=t.split('<').join('&lt;');t=t.split('>').join('&gt;');t=t.split('"').join('&quot;');t=t.split("'").join('&#x27;');return t;}
+function showError(msg){var t=document.getElementById('toast');if(!t)return;t.textContent='⚠ '+msg;t.style.cssText='background:#450a0a;color:#fca5a5;border:1px solid #ef44441a';t.classList.add('show');setTimeout(function(){t.classList.remove('show');t.style.cssText='';},4000);}
+
+let state = {
+  currentUser: null,
+  year: new Date().getFullYear(),
+  calView: 'cal',
+  prevView: 'view-calendar',
+  _events: [],
+  _regs: [],
+  _savedSkiers: [],
+};
+
+function getEvents(){ return state._events; }
+function getRegs(){ return state._regs; }
+
+async function loadEvents(){
+  const { data } = await sb.from('events').select('*').order('from_date');
+  state._events = (data||[]).map(e=>({
+    id: e.id, groups: e.groups||[],
+    from: e.from_date, to: e.to_date||e.from_date,
+    venue: e.venue||'', organizer: e.organizer||'',
+    email: e.email||'', phone: e.phone||'',
+    whatsapp: e.whatsapp||'', info: e.info||'',
+    createdBy: e.created_by,
+  }));
+}
+
+async function loadRegs(){
+  const { data } = await sb.from('registrations').select('*').order('created_at');
+  state._regs = (data||[]).map(r=>({
+    id: r.id, eventId: r.event_id,
+    fname: r.fname, lname: r.lname, club: r.club,
+    group: r.age_group,
+    guardianFname: r.guardian_fname,
+    guardianLname: r.guardian_lname,
+    guardianPhone: r.guardian_phone,
+    createdBy: r.created_by, createdAt: r.created_at,
+  }));
+}
+
+async function loadAll(){
+  try{ await Promise.all([loadEvents(),loadRegs(),loadSavedSkiers(),loadClubs()]); }
+  catch(err){ showError('Kunde inte ladda data — kontrollera uppkopplingen.'); console.error('loadAll:',err); }
+}
+async function loadSavedSkiers(){
+  if(!state.currentUser){ console.warn('loadSavedSkiers: no currentUser'); return; }
+  try{
+    const res=await sb.from('saved_skiers').select('*').eq('owner_id',state.currentUser.id).order('fname');
+    if(res.error) throw res.error;
+    state._savedSkiers=res.data||[];
+  }catch(e){
+    console.error('loadSavedSkiers error:', e);
+    state._savedSkiers=[];
+  }
+}
+
+async function debugSavedSkiers(){
+  const out=document.getElementById('debug-out');
+  if(!out) return;
+  out.style.display='block';
+  out.textContent='Hämtar...';
+  try{
+    // Test 1: Direct query
+    const r1=await sb.from('saved_skiers').select('*');
+    // Test 2: With user filter
+    const r2=await sb.from('saved_skiers').select('*').eq('owner_id',state.currentUser?.id);
+    // Test 3: Count
+    const r3=await sb.from('saved_skiers').select('*',{count:'exact',head:true});
+    out.textContent=
+      'User ID: '+state.currentUser?.id+'\n'
+      +'Test 1 (alla): '+(r1.error?'FEL: '+r1.error.message:JSON.stringify(r1.data?.length)+' rader')+'\n'
+      +'Test 2 (din): '+(r2.error?'FEL: '+r2.error.message:JSON.stringify(r2.data))+'\n'
+      +'Test 3 (count): '+(r3.error?'FEL: '+r3.error.message:'count='+r3.count)+'\n'
+      +'state._savedSkiers: '+JSON.stringify(state._savedSkiers);
+  }catch(e){
+    out.textContent='Exception: '+e.message;
+  }
+}
+function renderSavedSkiersInModal(){
+  var skiers=state._savedSkiers;
+  var section=document.getElementById('saved-skiers-section');
+  var list=document.getElementById('saved-skier-list');
+  if(!section||!list) return;
+  if(!skiers.length){ section.style.display='none'; return; }
+  section.style.display='block';
+  list.innerHTML=skiers.map(function(s){
+    var ini=((s.fname||'')[0]||'')+((s.lname||'')[0]||'');
+    return '<div class="skier-chip" data-skier-id="'+s.id+'" onclick="fillSkierFromSaved(this.dataset.skierId)"><div class="my-skier-avatar">'+ini.toUpperCase()+'</div><div class="my-skier-info"><div class="skier-chip-name">'+s.fname+' '+s.lname+'</div><div class="skier-chip-sub">'+s.club+' · '+s.guardian_fname+' '+s.guardian_lname+'</div></div><span class="skier-chip-grp">'+s.age_group+'</span></div>';
+  }).join('');
+}
+function fillSkierFromSaved(skierId){
+  var s=state._savedSkiers.find(function(x){return x.id===skierId;});
+  if(!s) return;
+  document.getElementById('reg-fname-f').value=s.fname;
+  document.getElementById('reg-lname-f').value=s.lname;
+  document.getElementById('reg-club-f').value=s.club;
+  document.getElementById('reg-guardian-fname').value=s.guardian_fname;
+  document.getElementById('reg-guardian-lname').value=s.guardian_lname;
+  document.getElementById('reg-guardian-phone').value=s.guardian_phone;
+  document.querySelectorAll('.grp-toggle-btn').forEach(function(b){ b.classList.toggle('active',b.dataset.grp===s.age_group); });
+  var cb=document.getElementById('reg-save-skier'); if(cb) cb.checked=false;
+  var active=document.querySelector('.grp-toggle-btn.active'); if(active) selectGrp(active);
+  showToast(s.fname+' fylld i!');
+}
+let _editUserRole='user';
+
+function openEditUser(userId){
+  const u=state.currentUser;
+  if(!u||u.role!=='admin'){showError('Bara admins kan redigera användare.');return;}
+  // Find user in allUsers — need to fetch from Supabase
+  sb.from('profiles').select('*').eq('id',userId).single().then(function(res){
+    if(res.error||!res.data){showError('Kunde inte hitta användaren.');return;}
+    const au=res.data;
+    document.getElementById('edit-user-id').value=au.id;
+    document.getElementById('edit-user-fname').value=au.fname||'';
+    document.getElementById('edit-user-lname').value=au.lname||'';
+    document.getElementById('edit-user-club').value=au.club||'';
+    document.getElementById('err-edit-user').textContent='';
+    setEditUserRole(au.role||'user');
+    document.getElementById('modal-edit-user').classList.add('open');
+  });
+}
+
+function setEditUserRole(role){
+  _editUserRole=role;
+  document.getElementById('role-btn-user').className='btn '+(role==='user'?'btn-primary':'btn-ghost');
+  document.getElementById('role-btn-admin').className='btn '+(role==='admin'?'btn-primary':'btn-ghost');
+}
+
+async function saveEditUser(){
+  const id=document.getElementById('edit-user-id').value;
+  const fname=document.getElementById('edit-user-fname').value.trim();
+  const lname=document.getElementById('edit-user-lname').value.trim();
+  const club=document.getElementById('edit-user-club').value.trim();
+  const err=document.getElementById('err-edit-user');
+  if(!fname||!lname){err.textContent='Fyll i namn.';return;}
+  err.textContent='';
+  try{
+    const{error}=await sb.from('profiles').update({fname,lname,club,role:_editUserRole}).eq('id',id);
+    if(error) throw error;
+    closeModal('modal-edit-user');
+    showToast('Användare uppdaterad!');
+    renderAdmin();
+  }catch(e){
+    err.textContent='Kunde inte spara: '+(e.message||e);
+    console.error('saveEditUser:',e);
+  }
+}
+
+function openEditSkier(skierId){
+  const s=state._savedSkiers.find(function(x){return x.id===skierId;});
+  if(!s) return;
+  document.getElementById('edit-skier-id').value=s.id;
+  document.getElementById('edit-skier-fname').value=s.fname||'';
+  document.getElementById('edit-skier-lname').value=s.lname||'';
+  document.getElementById('edit-skier-club').value=s.club||'';
+  document.getElementById('edit-skier-gfname').value=s.guardian_fname||'';
+  document.getElementById('edit-skier-glname').value=s.guardian_lname||'';
+  document.getElementById('edit-skier-gphone').value=s.guardian_phone||'';
+  document.querySelectorAll('#modal-edit-skier .grp-toggle-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.grp===s.age_group);
+  });
+  document.getElementById('err-edit-skier').textContent='';
+  document.getElementById('modal-edit-skier').classList.add('open');
+}
+
+function selectEditGrp(btn){
+  document.querySelectorAll('#modal-edit-skier .grp-toggle-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+
+async function saveEditSkier(){
+  const id=document.getElementById('edit-skier-id').value;
+  const fname=document.getElementById('edit-skier-fname').value.trim();
+  const lname=document.getElementById('edit-skier-lname').value.trim();
+  const club=document.getElementById('edit-skier-club').value.trim();
+  const gfname=document.getElementById('edit-skier-gfname').value.trim();
+  const glname=document.getElementById('edit-skier-glname').value.trim();
+  const gphone=document.getElementById('edit-skier-gphone').value.trim();
+  const activeGrp=document.querySelector('#modal-edit-skier .grp-toggle-btn.active');
+  const err=document.getElementById('err-edit-skier');
+  if(!fname||!lname||!club){err.textContent='Fyll i namn och klubb.';return;}
+  if(!activeGrp){err.textContent='Välj åldersgrupp.';return;}
+  const age_group=activeGrp.dataset.grp;
+  err.textContent='';
+  try{
+    const{error}=await sb.from('saved_skiers').update({
+      fname,lname,club,age_group,
+      guardian_fname:gfname,guardian_lname:glname,guardian_phone:gphone
+    }).eq('id',id);
+    if(error) throw error;
+    await loadSavedSkiers();
+    closeModal('modal-edit-skier');
+    renderAdmin();
+    showToast('Åkare uppdaterad!');
+  }catch(err2){
+    document.getElementById('err-edit-skier').textContent='Kunde inte spara. Försök igen.';
+    console.error('saveEditSkier:',err2);
+  }
+}
+
+async function deleteSavedSkier(skierId){
+  if(!confirm('Ta bort den sparade åkaren?')) return;
+  try{
+    await sb.from('saved_skiers').delete().eq('id',skierId);
+    await loadSavedSkiers(); renderAdmin(); showToast('Åkare borttagen');
+  }catch(err){ showError('Kunde inte ta bort åkaren.'); console.error(err); }
+}
+
+async function loadSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session) return false;
+  let { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  // Profile missing (e.g. created via Supabase dashboard) — create it
+  if(!profile){
+    const meta = session.user.user_metadata||{};
+    const { data: newProfile } = await sb.from('profiles').insert({
+      id: session.user.id,
+      fname: meta.fname||session.user.email.split('@')[0],
+      lname: meta.lname||'',
+      club: meta.club||'',
+      role: 'admin', // first manual user gets admin
+    }).select().single();
+    profile = newProfile;
+  }
+  if(!profile) return false;
+  state.currentUser = {
+    id: session.user.id, email: session.user.email,
+    fname: profile.fname||'', lname: profile.lname||'',
+    club: profile.club||'', role: profile.role||'user',
+  };
+  return true;
+}
+function clearSession(){ sb.auth.signOut(); state.currentUser=null; }
+
+// ── VIEW ROUTING ──
+function showView(id){
+  var cur=document.querySelector('.view.active');
+  if(cur&&cur.id!==id) state.prevView=cur.id;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.gnav-tab').forEach(function(t){t.classList.remove('active');});
+  var tabMap={'view-calendar':'nav-cal','view-event':'nav-cal','view-om':'nav-om','view-admin':'nav-konto'};
+  if(tabMap[id]) document.querySelectorAll('.'+tabMap[id]).forEach(function(t){t.classList.add('active');});
+  var nav=document.getElementById('global-nav');
+  var authViews=['view-login','view-register','view-forgot'];
+  if(nav) nav.style.display=authViews.includes(id)?'none':'block';
+  if(id==='view-admin') renderAdmin();
+  if(id==='view-register') document.getElementById('reg-admin-wrap').style.display='block';
+  document.getElementById('user-menu').style.display='none';
+  window.scrollTo(0,0);
+}
+function goBack(){
+  var safe=['view-calendar','view-event','view-om','view-admin'];
+  showView(safe.includes(state.prevView)?state.prevView:'view-calendar');
+}
+
+// ── AUTH HELPERS ──
+function togglePw(id,btn){
+  const inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+function setMsg(id,txt,ok){
+  const el=document.getElementById(id);
+  el.innerHTML=txt?`<div class="msg-box ${ok?'msg-success':'msg-error'}">${txt}</div>`:'';
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pw=document.getElementById('login-pw').value;
+  if(!email||!pw){setMsg('login-msg','Fyll i e-post och lösenord.');return;}
+  setMsg('login-msg','Loggar in...', true);
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if(error){ setMsg('login-msg', error.message==='Invalid login credentials'?'Fel e-post eller lösenord.':error.message); return; }
+  const ok = await loadSession();
+  if(ok){ await loadAll(); initApp(); }
+}
+
+// Admin code verified server-side via Supabase RPC
+
+async function doRegister(){
+  const fname=document.getElementById('reg-fname').value.trim();
+  const lname=document.getElementById('reg-lname').value.trim();
+  const club=document.getElementById('reg-club').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  const adminCode=document.getElementById('reg-admincode')?.value.trim()||'';
+
+  // Consent
+  const consentCb=document.getElementById('reg-consent');
+  const errConsent=document.getElementById('err-consent');
+  if(!consentCb?.checked){
+    if(errConsent) errConsent.textContent='Du måste godkänna integritetspolicyn.';
+    return;
+  }
+  if(errConsent) errConsent.textContent='';
+
+  // Validation
+  if(!fname||!lname||!club||!email||!pw){setMsg('reg-msg','Fyll i alla fält.');return;}
+  if(pw!==pw2){setMsg('reg-msg','Lösenorden matchar inte.');return;}
+  if(pw.length<6){setMsg('reg-msg','Lösenordet måste vara minst 6 tecken.');return;}
+
+  // Check admin code server-side if provided
+  if(adminCode){
+    try{
+      const{data:codeOk,error:codeErr}=await sb.rpc('check_admin_code',{input_code:adminCode});
+      if(codeErr||!codeOk){setMsg('reg-msg','Fel adminkod. Lämna fältet tomt om du inte är admin.');return;}
+    }catch(e){setMsg('reg-msg','Kunde inte kontrollera adminkod.');return;}
+  }
+
+  setMsg('reg-msg','Skapar konto...', true);
+  try{
+    const phone=document.getElementById('reg-phone').value.trim();
+    if(!phone){setMsg('reg-msg','Fyll i ditt mobilnummer.');return;}
+    const{data,error}=await sb.auth.signUp({
+      email,password:pw,
+      options:{data:{fname,lname,club,phone}}
+    });
+    if(error){setMsg('reg-msg',
+      error.message==='User already registered'?'Det finns redan ett konto med den e-postadressen.':
+      error.message);return;}
+
+    // Upgrade to admin if code provided
+    if(adminCode){
+      await sb.rpc('set_admin_by_email',{target_email:email,admin_code:adminCode}).catch(()=>{});
+    }
+
+    // Check if email confirmation required
+    const needsConfirm=data?.user&&!data?.session;
+    if(needsConfirm){
+      setMsg('reg-msg',
+        '✅ Konto skapat! Kolla din inkorg ('+email+') och klicka på bekräftelselänken för att aktivera kontot.',
+        true);
+      return;
+    }
+
+    // Auto sign in
+    const{error:loginErr}=await sb.auth.signInWithPassword({email,password:pw});
+    if(loginErr){
+      setMsg('reg-msg','Konto skapat! Logga in med dina uppgifter.',true);
+      showView('view-login');
+      return;
+    }
+    const ok=await loadSession();
+    if(ok){await loadAll();initApp();}
+    else{setMsg('reg-msg','Konto skapat men kunde inte logga in automatiskt. Försök logga in manuellt.');}
+  }catch(err){
+    setMsg('reg-msg','Nätverksfel — kontrollera din uppkoppling.');
+    console.error('doRegister:',err);
+  }
+}
+
+async function doForgot(){
+  const email=document.getElementById('forgot-email').value.trim().toLowerCase();
+  if(!email){setMsg('forgot-msg','Ange din e-postadress.');return;}
+  await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname + '?reset=true'
+  });
+  setMsg('forgot-msg',`Om ${email} finns registrerat skickas en återställningslänk inom någon minut. Kontrollera även skräpposten.`,true);
+}
+
+let _codeVisible=false;
+function toggleCodeVisibility(){
+  _codeVisible=!_codeVisible;
+  document.getElementById('user-menu-code-val').textContent=_codeVisible?'Se Supabase-inställningar':'••••••••';
+  document.getElementById('code-eye-btn').textContent=_codeVisible?'🙈':'👁';
+}
+function copyAdminCode(){
+  showToast('Adminkoden hanteras i Supabase.');
+}
+
+async function doLogout(){
+  _codeVisible=false;
+  await sb.auth.signOut();
+  state.currentUser=null;
+  state._events=[];
+  state._regs=[];
+  showView('view-login');
+  document.getElementById('user-menu').style.display='none';
+}
+
+function toggleUserMenu(){
+  const m=document.getElementById('user-menu');
+  const opening=m.style.display==='none';
+  m.style.display=opening?'block':'none';
+  if(opening && state.currentUser){
+    const isAdmin=state.currentUser.role==='admin';
+    document.getElementById('user-menu-admincode').style.display=isAdmin?'block':'none';
+    document.getElementById('admin-menu-item').style.display=isAdmin?'block':'none';
+  }
+}
+
+// ── INIT ──
+function initApp(){
+  const u=state.currentUser;
+  const fi=(u.fname||'?')[0]||'?'; const li=(u.lname||'?')[0]||'?';
+  document.getElementById('user-avatar').textContent=(fi+li).toUpperCase();
+  document.getElementById('user-name-short').textContent=u.fname||u.email||'Användare';
+  document.getElementById('user-menu-name').textContent=((u.fname||'')+' '+(u.lname||'')).trim()||u.email;
+  document.getElementById('user-menu-club').textContent=u.club;
+  document.getElementById('user-menu-email').textContent=u.email;
+  // show admin menu item only for admins
+  document.getElementById('admin-menu-item').style.display=u.role==='admin'?'block':'none';
+  document.getElementById('user-menu-admincode').style.display=u.role==='admin'?'block':'none';
+  var navEl=document.getElementById('global-nav');
+  if(navEl) navEl.style.display='block';
+  showView('view-calendar');
+  renderCalendar();
+  var notifBtn=document.getElementById('notif-btn');
+  if(notifBtn) notifBtn.style.display='block';
+  if('Notification' in window&&Notification.permission==='default')setTimeout(function(){Notification.requestPermission();},3000);
+  startRealtimeListener();
+}
+
+// ── REALTIME + NOTIFICATIONS ──
+var _notifs=[];
+function startRealtimeListener(){
+  var u=state.currentUser;if(!u) return;
+  sb.channel('ast-'+u.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'registrations'},function(payload){
+    var reg=payload.new;
+    var ev=getEvents().find(function(e){return e.id===reg.event_id;});
+    if(!ev) return;
+    if(ev.createdBy!==u.id&&u.role!=='admin') return;
+    loadRegs().then(function(){
+      var av=document.querySelector('.view.active');
+      if(av&&av.id==='view-event'){var b=document.getElementById('ev-detail-body');if(b&&b.innerHTML.includes(ev.id))openEventDetail(ev.id);}
+    });
+    var name=(reg.fname||'')+' '+(reg.lname||'');
+    var evName=ev.venue||ev.organizer||'träning';
+    var msg=name+' ('+(reg.age_group||'')+') har anmält sig till '+evName;
+    _notifs.unshift({id:reg.id,title:'Ny anmälan!',body:msg,evId:ev.id,time:new Date()});
+    if(_notifs.length>20)_notifs.pop();
+    renderNotifPanel();
+    var badge=document.getElementById('notif-badge');
+    if(badge)badge.style.display='block';
+    showToast(name+' anmälde sig!');
+    if('Notification' in window&&Notification.permission==='granted'){
+      var n=new Notification('AST - Ny anmälan',{body:msg,tag:'ast-'+reg.id});
+      n.onclick=function(){window.focus();openEventDetail(ev.id);n.close();};
+    }
+  }).subscribe();
+}
+function renderNotifPanel(){
+  var list=document.getElementById('notif-list');var empty=document.getElementById('notif-empty');
+  if(!list)return;
+  if(!_notifs.length){list.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  list.innerHTML=_notifs.map(function(n){
+    var mins=Math.floor((new Date()-new Date(n.time))/60000);
+    var t=mins<1?'Nu':mins<60?mins+'m sedan':Math.floor(mins/60)+'h sedan';
+    return '<div data-ev-id="'+n.evId+'" onclick="openEventDetail(this.dataset.evId);toggleNotifPanel()" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:3px"><span style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--accent)">'+n.title+'</span><span style="font-size:11px;color:var(--muted)">'+t+'</span></div><div style="font-size:12px;color:var(--text);line-height:1.4">'+n.body+'</div></div>';
+  }).join('');
+}
+function toggleNotifPanel(){
+  var p=document.getElementById('notif-panel');if(!p)return;
+  var open=p.style.display!=='none';p.style.display=open?'none':'block';
+  if(!open){document.getElementById('notif-badge').style.display='none';setTimeout(function(){document.addEventListener('click',function h(e){if(!p.contains(e.target)&&e.target.id!=='notif-btn'){p.style.display='none';}document.removeEventListener('click',h);});},50);}
+}
+function clearNotifs(){_notifs.length=0;renderNotifPanel();var b=document.getElementById('notif-badge');if(b)b.style.display='none';}
+async function confirmDeleteAccount(){
+  var answer=prompt('Skriv RADERA för att permanent ta bort ditt konto och all din data.');
+  if(answer!=='RADERA')return;
+  try{
+    var uid=state.currentUser.id;
+    await sb.from('saved_skiers').delete().eq('owner_id',uid);
+    await sb.from('profiles').delete().eq('id',uid);
+    await sb.rpc('delete_own_account').catch(function(e){console.warn(e);});
+    await sb.auth.signOut();
+    state.currentUser=null;state._events=[];state._regs=[];state._savedSkiers=[];
+    var nav=document.getElementById('global-nav');if(nav)nav.style.display='none';
+    showView('view-login');
+    setTimeout(function(){alert('Ditt konto och all data är raderade.');},300);
+  }catch(err){showError('Kunde inte radera kontot.');console.error(err);}
+}
+
+// ── RECURRING EVENTS ──
+var _recurEnabled = false;
+
+function toggleRecurring(){
+  _recurEnabled = !_recurEnabled;
+  var wrap = document.getElementById('recur-toggle-wrap');
+  var knob = document.getElementById('recur-toggle-knob');
+  var opts = document.getElementById('recur-options');
+  if(_recurEnabled){
+    wrap.style.background = 'var(--accent)';
+    knob.style.left = '22px';
+    opts.style.display = 'flex';
+    updateRecurPreview();
+  } else {
+    wrap.style.background = 'var(--border2)';
+    knob.style.left = '2px';
+    opts.style.display = 'none';
+  }
+}
+
+function toggleRecurDay(btn){
+  btn.classList.toggle('active');
+  updateRecurPreview();
+}
+
+function getRecurDays(){
+  var days = [];
+  document.querySelectorAll('.recur-day-btn.active').forEach(function(b){
+    days.push(parseInt(b.dataset.day));
+  });
+  return days;
+}
+
+function getRecurDates(){
+  if(!_recurEnabled) return [];
+  var days = getRecurDays();
+  var until = document.getElementById('recur-until').value;
+  var fromVal = document.getElementById('ev-from').value;
+  if(!days.length || !until || !fromVal) return [];
+
+  var dates = [];
+  var start = new Date(fromVal + 'T12:00:00');
+  var end = new Date(until + 'T12:00:00');
+  var duration = 0;
+  var toVal = document.getElementById('ev-to').value;
+  if(toVal && toVal >= fromVal){
+    duration = Math.round((new Date(toVal+'T12:00:00') - start) / 86400000);
+  }
+
+  var cur = new Date(start);
+  cur.setDate(cur.getDate() + 7); // Start from week AFTER the base event
+  var maxEvents = 52; // Safety cap
+  var count = 0;
+  while(cur <= end && count < maxEvents){
+    if(days.indexOf(cur.getDay()) !== -1){
+      var d = cur.toISOString().slice(0,10);
+      var endD = new Date(cur);
+      endD.setDate(endD.getDate() + duration);
+      dates.push({from: d, to: endD.toISOString().slice(0,10)});
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
+function updateRecurPreview(){
+  var preview = document.getElementById('recur-preview');
+  if(!preview) return;
+  var dates = getRecurDates();
+  if(!dates.length){
+    preview.style.display = 'none';
+    return;
+  }
+  preview.style.display = 'block';
+  var dayNames = ['Sön','Mån','Tis','Ons','Tor','Fre','Lör'];
+  preview.innerHTML = '<strong style="color:var(--text)">' + dates.length + ' extra träningar skapas:</strong><br>'
+    + dates.map(function(d){
+        var dt = new Date(d.from + 'T12:00:00');
+        return dayNames[dt.getDay()] + ' ' + d.from + (d.from !== d.to ? ' – ' + d.to : '');
+      }).join('<br>');
+}
+
+function resetRecurring(){
+  _recurEnabled = false;
+  var wrap = document.getElementById('recur-toggle-wrap');
+  var knob = document.getElementById('recur-toggle-knob');
+  var opts = document.getElementById('recur-options');
+  if(wrap) wrap.style.background = 'var(--border2)';
+  if(knob) knob.style.left = '2px';
+  if(opts) opts.style.display = 'none';
+  document.querySelectorAll('.recur-day-btn').forEach(function(b){ b.classList.remove('active'); });
+  var until = document.getElementById('recur-until');
+  if(until) until.value = '';
+  var preview = document.getElementById('recur-preview');
+  if(preview) preview.style.display = 'none';
+}
+
+// ── CLUBS ──
+var _clubs = [];
+var _activeClubFilter = '';
+var _activeGrpFilter = '';
+
+function setGrpFilter(btn){
+  _activeGrpFilter = btn.dataset.grp || '';
+  document.querySelectorAll('.grp-filter-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.grp === _activeGrpFilter);
+  });
+  renderCalendar();
+  if(state.calView==='list') renderListView();
+}
+
+async function loadClubs(){
+  try{
+    var res = await sb.from('clubs').select('name').order('name');
+    if(res.error) throw res.error;
+    _clubs = (res.data||[]).map(function(r){return r.name;});
+    // Populate datalist
+    var dl = document.getElementById('clubs-list');
+    if(dl){
+      dl.innerHTML = _clubs.map(function(name){
+        return '<option value="'+esc(name)+'"></option>';
+      }).join('');
+    }
+    // Render filter chips
+    renderClubFilterChips();
+  }catch(e){ console.warn('loadClubs:',e.message); }
+}
+
+function renderClubFilterChips(){
+  // Populate club dropdown with clubs from events + registry
+  var sel = document.getElementById('club-select');
+  if(sel){
+    var eventClubs = new Set();
+    getEvents().forEach(function(ev){ if(ev.organizer) eventClubs.add(ev.organizer); });
+    _clubs.forEach(function(cl){ eventClubs.add(cl); });
+    var clubs = Array.from(eventClubs).sort();
+    sel.innerHTML = '<option value="">Alla klubbar</option>'
+      + clubs.map(function(cl){
+          return '<option value="'+esc(cl)+'"'+(cl===_activeClubFilter?' selected':'')+'>'+esc(cl)+'</option>';
+        }).join('');
+    if(_activeClubFilter) sel.value = _activeClubFilter;
+  }
+  // Sync grp filter button states
+  document.querySelectorAll('.grp-filter-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.grp===_activeGrpFilter);
+  });
+}
+
+
+function setClubFilter(btn){
+  _activeClubFilter = btn.dataset.club || '';
+  renderCalendar();
+  if(state.calView==='list') renderListView();
+}
+
+function setClubFilterFromSelect(val){
+  _activeClubFilter = val || '';
+  renderCalendar();
+  if(state.calView==='list') renderListView();
+}
+
+function getFilteredEvents(){
+  var events = getEvents();
+  if(_activeClubFilter){
+    events = events.filter(function(ev){
+      return ev.organizer === _activeClubFilter;
+    });
+  }
+  if(_activeGrpFilter){
+    events = events.filter(function(ev){
+      return ev.groups && ev.groups.indexOf(_activeGrpFilter) !== -1;
+    });
+  }
+  return events;
+}
+
+// Admin: club management functions
+function updateClubHint(){
+  var input=document.getElementById('new-club-input');
+  var hint=document.getElementById('club-match-hint');
+  if(!input||!hint) return;
+  var v=input.value.trim();
+  if(!v){hint.textContent='';return;}
+  var matches=_clubs.filter(function(cl){return cl.toLowerCase().includes(v.toLowerCase())&&cl!==v;});
+  hint.textContent=matches.length?'Liknar: '+matches.slice(0,3).join(', '):'';
+}
+
+function addClubFromInput(){
+  var input=document.getElementById('new-club-input');
+  var hint=document.getElementById('club-match-hint');
+  if(!input) return;
+  var name=input.value.trim();
+  addClub(name).then(function(){
+    input.value='';
+    if(hint) hint.textContent='';
+  });
+}
+
+async function addClub(name){
+  name = name.trim();
+  if(!name) return;
+  if(_clubs.includes(name)){ showToast('Klubben finns redan'); return; }
+  try{
+    var{error}=await sb.from('clubs').insert({name:name});
+    if(error) throw error;
+    await loadClubs();
+    renderAdmin();
+    showToast(name+' tillagd!');
+  }catch(e){ showError('Kunde inte lägga till klubb: '+e.message); }
+}
+
+async function deleteClub(name){
+  if(!confirm('Ta bort '+name+' från klubbregistret?')) return;
+  try{
+    var{error}=await sb.from('clubs').delete().eq('name',name);
+    if(error) throw error;
+    await loadClubs();
+    renderAdmin();
+    showToast('Klubb borttagen');
+  }catch(e){ showError('Kunde inte ta bort klubb.'); }
+}
+
+// ── ICAL EXPORT ──
+
+
+function openIcalModal(){
+  updateIcalPreview();
+  document.getElementById('modal-ical').classList.add('open');
+}
+function toggleIcalGrp(btn){
+  btn.classList.toggle('active');
+  updateIcalPreview();
+}
+function getIcalGrps(){
+  var btns=document.querySelectorAll('.ical-grp-btn.active');
+  var grps=new Set();
+  btns.forEach(function(b){grps.add(b.dataset.grp);});
+  return grps;
+}
+function updateIcalPreview(){
+  var activeGrps=getIcalGrps();
+  var events=getEvents();
+  var filtered=events.filter(function(ev){return ev.groups.some(function(g){return activeGrps.has(g);});});
+  var prev=document.getElementById('ical-preview');
+  if(!prev) return;
+  if(!activeGrps.size){prev.textContent='Välj minst en åldersgrupp.';return;}
+  if(!filtered.length){prev.textContent='Inga träningar matchar valda grupper.';return;}
+  filtered.sort(function(a,b){return a.from.localeCompare(b.from);});
+  prev.innerHTML=filtered.map(function(ev){
+    var grps=ev.groups.filter(function(g){return activeGrps.has(g);}).join(', ');
+    return '<div style="display:flex;gap:8px;align-items:baseline">'
+      +'<span style="color:var(--text);font-weight:500;min-width:90px;flex-shrink:0">'+ev.from+(ev.from!==ev.to?' – '+ev.to:'')+'</span>'
+      +'<span>'+esc(ev.organizer||ev.venue||'Träning')+'</span>'
+      +'<span style="font-family:var(--font-head);font-size:11px;color:var(--accent);margin-left:auto">'+grps+'</span>'
+      +'</div>';
+  }).join('');
+}
+function downloadIcal(){
+  var activeGrps=getIcalGrps();
+  if(!activeGrps.size){showError('Välj minst en åldersgrupp.');return;}
+  var events=getEvents().filter(function(ev){return ev.groups.some(function(g){return activeGrps.has(g);});});
+  if(!events.length){showError('Inga träningar matchar valda grupper.');return;}
+  function pad(n){return String(n).padStart(2,'0');}
+  function toDate(s){var d=new Date(s+'T00:00:00');return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());}
+  function escIcal(s){
+    var t=String(s||'');
+    t=t.split('\n').join('\\n');
+    t=t.split(',').join('\\,');
+    t=t.split(';').join('\\;');
+    return t;
+  }
+  var now=new Date();
+  var stamp=now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'T'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds())+'Z';
+  var lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AST//SE','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:AST Träningar'];
+  events.sort(function(a,b){return a.from.localeCompare(b.from);}).forEach(function(ev){
+    var endD=new Date(ev.to+'T00:00:00');
+    endD.setDate(endD.getDate()+1);
+    var dtend=endD.getFullYear()+pad(endD.getMonth()+1)+pad(endD.getDate());
+    var grps=ev.groups.filter(function(g){return activeGrps.has(g);}).join(', ');
+    var summary=escIcal((ev.organizer||ev.venue||'AST Träning')+' ('+grps+')');
+    var desc='Grupper: '+grps;
+    if(ev.venue) desc+='\\nPlats: '+ev.venue;
+    if(ev.organizer) desc+='\\nArrangör: '+ev.organizer;
+    if(ev.phone) desc+='\\nTel: '+ev.phone;
+    if(ev.whatsapp) desc+='\\nWhatsApp: '+ev.whatsapp;
+    if(ev.info) desc+='\\n\\n'+ev.info;
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:ast-'+ev.id+'@yxbacken.nu');
+    lines.push('DTSTAMP:'+stamp);
+    lines.push('DTSTART;VALUE=DATE:'+toDate(ev.from));
+    lines.push('DTEND;VALUE=DATE:'+dtend);
+    lines.push('SUMMARY:'+summary);
+    lines.push('DESCRIPTION:'+escIcal(desc));
+    if(ev.venue) lines.push('LOCATION:'+escIcal(ev.venue));
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  var ics=lines.join('\r\n');
+  var blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='AST_traning_'+([...activeGrps].join('-'))+'.ics';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeModal('modal-ical');
+  showToast('Kalender exporterad!');
+}
+
+// ── CALENDAR ──
+function changeSeason(d){ state.year+=d; document.getElementById('cal-year').textContent=state.year; renderClubFilterChips(); renderCalendar(); if(state.calView==='list') renderListView(); }
+function changeYear(d){ state.year+=d; document.getElementById('cal-year').textContent=state.year; renderCalendar(); if(state.calView==='list') renderListView(); }
+
+
+// ── VIEW TOGGLE CAL/LIST ──
+function setCalView(v){
+  state.calView=v;
+  const isL=v==='list';
+  document.getElementById('pane-cal').style.display=isL?'none':'block';
+  document.getElementById('pane-list').style.display=isL?'block':'none';
+  document.getElementById('vt-cal').classList.toggle('active',!isL);
+  document.getElementById('vt-list').classList.toggle('active',isL);
+  // Update gnav active state
+  document.querySelectorAll('.gnav-tab.nav-cal').forEach(t=>t.classList.add('active'));
+  showView('view-calendar');
+  if(isL) renderListView();
+}
+
+function renderListView(){
+  const MONTHS_FULL=['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+  const MONTHS_SHORT=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  const allEvs=getFilteredEvents().filter(function(e){return e.from.startsWith(String(state.year));});
+  // Group by month of from-date
+  const byMonth={};
+  for(let m=0;m<12;m++) byMonth[m]=[];
+  allEvs.forEach(ev=>{
+    const m=parseInt(ev.from.slice(5,7))-1;
+    byMonth[m].push(ev);
+  });
+  // sort each month by date
+  for(let m=0;m<12;m++) byMonth[m].sort((a,b)=>a.from.localeCompare(b.from));
+  
+  let html='';
+  for(let m=0;m<12;m++){
+    const evs=byMonth[m];
+    const regsAll=getRegs();
+    const monthEvCount=evs.length;
+    html+=`<div class="list-month">
+      <div class="list-month-head">
+        ${MONTHS_FULL[m]}
+        <span class="list-month-count">${monthEvCount} träning${monthEvCount!==1?'ar':''}</span>
+      </div>`;
+    if(!evs.length){
+      html+=`<div class="list-empty">Inga träningar inlagda.</div>`;
+    } else {
+      evs.forEach(ev=>{
+        const regCount=regsAll.filter(r=>r.eventId===ev.id).length;
+        const dayFrom=ev.from.slice(8);
+        const dayTo=ev.to&&ev.to!==ev.from?ev.to.slice(8):'';
+        const monIdx=parseInt(ev.from.slice(5,7))-1;
+        const grpDots=ev.groups.map(g=>`<div class="leg-dot" style="background:${GRP_COLORS[g]}"></div>`).join('');
+  const safeOrg=esc(ev.organizer);const safeVenue=esc(ev.venue);const safeInfo=esc(ev.info);const safeEmail=esc(ev.email);const safePhone=esc(ev.phone);
+        const dateLabel=dayTo?`${dayFrom}–${dayTo} ${MONTHS_SHORT[monIdx]}`:`${dayFrom} ${MONTHS_SHORT[monIdx]}`;
+        html+=`<div class="list-ev-card" onclick="openEventDetail('${ev.id}')">
+          <div class="list-date-col">
+            <div class="list-date-day">${dayFrom}</div>
+            <div class="list-date-mon">${MONTHS_SHORT[monIdx]}</div>
+            ${dayTo?`<div class="list-date-mon" style="margin-top:1px">–${dayTo}</div>`:''}
+          </div>
+          <div class="list-ev-body">
+            <div class="list-ev-title">${safeOrg||'Träning'}</div>
+            <div class="list-ev-sub">
+              <span>${ev.groups.join(', ')}</span>
+              ${ev.venue?`<span>${ev.venue}</span>`:''}
+              ${ev.email?`<span style="color:var(--muted)">${ev.email}</span>`:''}
+            </div>
+            <div class="list-ev-dots">${grpDots}</div>
+          </div>
+          <div class="list-ev-reg">${regCount} anm.</div>
+        </div>`;
+      });
+    }
+    html+='</div>';
+  }
+  document.getElementById('list-body').innerHTML=html;
+}
+
+function dateRange(from,to){
+  const dates=[];let d=new Date(from);const end=new Date(to);
+  while(d<=end){dates.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);}
+  return dates;
+}
+
+function eventsForDate(dateStr){
+  return getEvents().filter(e=>dateRange(e.from,e.to).includes(dateStr));
+}
+
+// ── BAR COLORS per group (dark fill, light text) ──
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  document.getElementById('cal-year').textContent=state.year;
+  const today=new Date().toISOString().slice(0,10);
+  const allEvs=getFilteredEvents();
+  const MAX_ROWS=3;
+  for(let m=0;m<12;m++){
+    const yr=state.year;
+    const daysInMonth=new Date(yr,m+1,0).getDate();
+    let startDow=new Date(yr,m,1).getDay();
+    startDow=startDow===0?6:startDow-1;
+    const mStr=String(m+1).padStart(2,'0');
+    const mStart=yr+'-'+mStr+'-01';
+    const mEnd=yr+'-'+mStr+'-'+String(daysInMonth).padStart(2,'0');
+    const mEvs=allEvs.filter(e=>e.from<=mEnd&&(e.to||e.from)>=mStart);
+
+    const card=document.createElement('div');
+    card.className='month-card';
+    let html=`<div class="month-head">${MONTHS[m]}</div><div class="m-grid">`;
+    DAYS.forEach(d=>html+=`<div class="dh">${d}</div>`);
+    for(let i=0;i<startDow;i++) html+=`<div class="day empty"></div>`;
+
+    for(let day=1;day<=daysInMonth;day++){
+      const ds=yr+'-'+mStr+'-'+String(day).padStart(2,'0');
+      const isToday=ds===today;
+      const dayEvs=mEvs.filter(e=>e.from<=ds&&(e.to||e.from)>=ds);
+
+      // Build dot rows — one row per event, showing that event's group dots
+      const shown=dayEvs.slice(0,MAX_ROWS);
+      const overflow=dayEvs.length-MAX_ROWS;
+
+      let dotRows='';
+      shown.forEach(ev=>{
+        const dots=ev.groups.map(g=>`<div class="ev-dot" style="background:${GRP_COLORS[g]||'#94a3b8'}"></div>`).join('');
+        dotRows+=`<div class="ev-row">${dots}</div>`;
+      });
+      if(overflow>0) dotRows+=`<div class="ev-more">+${overflow}</div>`;
+
+      // Tooltip: one row per event with Ort/Backe + Klubb + grupper
+      let tipRows='';
+      dayEvs.forEach(ev=>{
+        const dotColor=GRP_COLORS[ev.groups[0]]||'#94a3b8';
+        const name=ev.venue||ev.organizer||'Träning';
+        const sub=[ev.organizer,ev.groups.join(', ')].filter(Boolean).join(' · ');
+        tipRows+=`<div class="day-tip-row" onclick="event.stopPropagation();openEventDetail('${ev.id}')" style="cursor:pointer">
+          <div class="day-tip-dot" style="background:${dotColor}"></div>
+          <div style="flex:1"><div class="day-tip-name">${name}</div><div class="day-tip-sub">${sub}</div></div>
+          <div style="font-size:9px;font-family:var(--font-head);font-weight:700;letter-spacing:.5px;color:var(--accent);white-space:nowrap;padding-left:6px">Öppna →</div>
+        </div>`;
+      });
+
+      const clickFn = dayEvs.length > 1
+        ? `toggleDayTip(event, '${ds}')`
+        : dayEvs.length === 1 ? `openEventDetail('${dayEvs[0].id}')` : '';
+      html+=`<div class="day${dayEvs.length?' has-ev':''}${isToday?' today':''}" ${clickFn?`onclick="${clickFn}"`:''}}>
+        <span class="day-n">${day}</span>
+        ${dotRows}
+        ${tipRows?`<div class="day-tip" id="tip-${ds}">${tipRows}</div>`:''}
+      </div>`;
+    }
+    html+='</div>';
+    card.innerHTML=html;
+    grid.appendChild(card);
+  }
+}
+
+function openEventDay(dateStr){
+  const evs=eventsForDate(dateStr);
+  if(!evs.length) return;
+  openEventDetail(evs[0].id);
+}
+
+function toggleDayTip(e, dateStr){
+  e.stopPropagation();
+  const tip=document.getElementById('tip-'+dateStr);
+  if(!tip) return;
+  const isOpen=tip.classList.contains('open');
+  // close all open tips first
+  document.querySelectorAll('.day-tip.open').forEach(t=>t.classList.remove('open'));
+  if(!isOpen){
+    tip.classList.add('open');
+    // close on next outside click
+    setTimeout(()=>{
+      document.addEventListener('click', function h(){
+        tip.classList.remove('open');
+        document.removeEventListener('click', h);
+      });
+    }, 10);
+  }
+}
+
+// ── EVENT DETAIL ──
+function openEventDetail(id){
+  const ev=getEvents().find(e=>e.id===id);
+  if(!ev) return;
+  const regs=getRegs().filter(r=>r.eventId===id);
+  const u=state.currentUser;
+  const canEdit=u.role==='admin'||u.id===ev.createdBy;
+
+  const grpDots=ev.groups.map(g=>`<div class="leg-dot" style="background:${GRP_COLORS[g]||'#94a3b8'};margin-right:2px"></div>`).join('');
+  const safeOrg=esc(ev.organizer);
+  const safeVenue=esc(ev.venue);
+  const safeInfo=esc(ev.info);
+  const safeEmail=esc(ev.email);
+  const safePhone=esc(ev.phone);
+
+  let regRows=regs.length
+    ? regs.map(r=>`<div class="reg-card">
+        <div style="flex:1">
+          <div class="reg-name">${r.fname} ${r.lname} <span style='font-family:var(--font-head);font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:1px 8px;margin-left:4px;color:var(--muted)'>${r.group||'—'}</span></div>
+          <div class="reg-sub">${r.club}</div>
+          <div class="reg-sub" style="margin-top:2px">Målsman: ${r.guardianFname||''} ${r.guardianLname||''} · ${r.guardianPhone||'—'}</div>
+        </div>
+        ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteReg('${r.id}','${id}')">Ta bort</button>`:''}
+      </div>`).join('')
+    : '<div style="font-size:13px;color:var(--muted);padding:.5rem 0">Inga anmälningar ännu.</div>';
+
+  document.getElementById('ev-detail-body').innerHTML=`
+    <button class="ev-back" onclick="goBack()">← Tillbaka till kalendern</button>
+
+    <div style="background:var(--accent);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1rem;cursor:pointer" onclick="openRegModal('${id}')">
+      <div>
+        <div style="font-family:var(--font-head);font-weight:900;font-size:17px;letter-spacing:.5px;color:#0a0f1e">Anmäl åkare till den här träningen</div>
+        <div style="font-size:12px;color:#1e3a5f;margin-top:2px">${ev.venue||ev.organizer||'Träning'} · ${ev.from}${ev.from!==ev.to?' – '+ev.to:''}</div>
+      </div>
+      <div style="font-family:var(--font-head);font-weight:900;font-size:22px;color:#0a0f1e;flex-shrink:0">+</div>
+    </div>
+
+    <div class="ev-title-row">
+      <div class="ev-title">${safeOrg||'Träning'}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${canEdit?`<button class="btn btn-ghost btn-sm" onclick="editEvent('${id}')">✏ Redigera</button><button class="btn btn-danger btn-sm" onclick="deleteEvent('${id}')">🗑 Ta bort</button>`:''}
+      </div>
+    </div>
+    <div class="ev-meta">
+      <div class="ev-meta-row"><span class="ev-meta-label">Datum</span><span>${ev.from}${ev.from!==ev.to?' → '+ev.to:''}</span></div>
+      ${safeVenue?`<div class="ev-meta-row"><span class="ev-meta-label">Backe / Ort</span><span>${safeVenue}</span></div>`:''}
+      <div class="ev-meta-row"><span class="ev-meta-label">Grupper</span><div style="display:flex;align-items:center;gap:4px">${grpDots} ${ev.groups.join(', ')}</div></div>
+      ${ev.email?`<div class="ev-meta-row"><span class="ev-meta-label">E-post</span><a href="mailto:${ev.email}" style="color:var(--accent)">${ev.email}</a></div>`:''}
+      ${ev.phone?`<div class="ev-meta-row"><span class="ev-meta-label">Telefon</span><a href="tel:${ev.phone}" style="color:var(--accent)">${ev.phone}</a></div>`:''}
+      ${ev.whatsapp?`<div class="ev-meta-row"><span class="ev-meta-label">WhatsApp</span><a href="${ev.whatsapp}" style="color:var(--accent)" target="_blank">Öppna grupp</a></div>`:''}
+    </div>
+    ${safeInfo?`<div class="ev-info-box">${safeInfo}</div>`:''}
+    <div class="reg-section">
+      <div class="reg-title">Anmälda åkare (${regs.length})</div>
+      ${regRows}
+      <button class="btn btn-ghost" style="margin-top:.75rem" onclick="openRegModal('${id}')">+ Anmäl ytterligare åkare</button>
+    </div>
+  `;
+  showView('view-event');
+}
+
+// ── ADD/EDIT EVENT ──
+function openAddEvent(){
+  document.getElementById('ev-id').value='';
+  document.getElementById('modal-event-title').textContent='Ny träning';
+  document.querySelectorAll('.grp-item').forEach(el=>el.classList.remove('sel'));
+  ['ev-from','ev-to','ev-venue','ev-org','ev-email','ev-phone','ev-wa','ev-info'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ev-info-c').textContent='0';
+  ['err-grp','err-date'].forEach(id=>document.getElementById(id).textContent='');
+  document.getElementById('modal-event').classList.add('open');
+}
+
+function editEvent(id){
+  const ev=getEvents().find(e=>e.id===id);
+  if(!ev) return;
+  document.getElementById('ev-id').value=id;
+  document.getElementById('modal-event-title').textContent='Redigera träning';
+  document.querySelectorAll('.grp-item').forEach(el=>{
+    el.classList.toggle('sel',ev.groups.includes(el.dataset.g));
+  });
+  document.getElementById('ev-from').value=ev.from;
+  document.getElementById('ev-to').value=ev.to;
+  document.getElementById('ev-venue').value=ev.venue||'';
+  document.getElementById('ev-org').value=ev.organizer||'';
+  document.getElementById('ev-email').value=ev.email||'';
+  document.getElementById('ev-phone').value=ev.phone||'';
+  document.getElementById('ev-wa').value=ev.whatsapp||'';
+  document.getElementById('ev-info').value=ev.info||'';
+  document.getElementById('ev-info-c').textContent=(ev.info||'').length;
+  document.getElementById('modal-event').classList.add('open');
+}
+
+async function saveEvent(){
+  const groups=[...document.querySelectorAll('.grp-item.sel')].map(el=>el.dataset.g);
+  if(!groups.length){document.getElementById('err-grp').textContent='Välj minst en grupp.';return;}
+  const from=document.getElementById('ev-from').value;
+  if(!from){document.getElementById('err-date').textContent='Ange startdatum.';return;}
+  const to=document.getElementById('ev-to').value||from;
+  // Enforce max 1 week
+  const fromD=new Date(from), toD=new Date(to<from?from:to);
+  const diffDays=(toD-fromD)/(1000*60*60*24);
+  if(diffDays>6){document.getElementById('err-date').textContent='Max 1 vecka (7 dagar).';return;}
+  const existing=getEvents();
+  const evId=document.getElementById('ev-id').value;
+  const ev={
+    id:evId||'e'+Date.now(),groups,from,to:to<from?from:to,
+    venue:document.getElementById('ev-venue').value,
+    organizer:document.getElementById('ev-org').value,
+    email:document.getElementById('ev-email').value,
+    phone:document.getElementById('ev-phone').value,
+    whatsapp:document.getElementById('ev-wa').value,
+    info:document.getElementById('ev-info').value,
+    createdBy:state.currentUser.id,
+  };
+  if(evId){
+    const idx=existing.findIndex(e=>e.id===evId);
+    if(idx>=0) existing[idx]={...existing[idx],...ev};
+  } else {
+    existing.push(ev);
+  }
+  // Supabase upsert
+  const payload = {
+    groups: ev.groups,
+    from_date: ev.from,
+    to_date: ev.to,
+    venue: ev.venue||null,
+    organizer: ev.organizer||null,
+    email: ev.email||null,
+    phone: ev.phone||null,
+    whatsapp: ev.whatsapp||null,
+    info: ev.info||null,
+    created_by: state.currentUser.id,
+  };
+  try {
+    if(evId){
+      const{error:e1}=await sb.from('events').update(payload).eq('id',evId);
+      if(e1) throw e1;
+    } else {
+      const{error:e2}=await sb.from('events').insert({...payload,id:undefined});
+      if(e2) throw e2;
+    }
+    await loadEvents();
+    closeModal('modal-event');
+    state.year=parseInt(from.slice(0,4));
+    document.getElementById('cal-year').textContent=state.year;
+    showToast(evId?'Träning uppdaterad':'Träning sparad!');
+    document.getElementById('cal-year').textContent=state.year;
+    renderCalendar();
+    if(state.calView==='list') renderListView();
+  } catch(err) {
+    showError('Kunde inte spara träningen. Försök igen.');
+    console.error('saveEvent:',err);
+  }
+}
+
+async function deleteEvent(id){
+  var ev=getEvents().find(function(e){return e.id===id;});
+  var regs=getRegs().filter(function(r){return r.eventId===id;});
+  if(regs.length){
+    var evName=ev?(ev.venue||ev.organizer||'träningen'):'träningen';
+    var dateStr=(ev&&ev.from||'')+(ev&&ev.from!==ev.to?' - '+ev.to:'');
+    var msg='Ta bort '+evName+(dateStr?' ('+dateStr+')':'')+'?\n\n'+regs.length+' åkare är anmälda. Klicka OK för att öppna e-postutkast till alla målsmän.';
+    if(!confirm(msg)) return;
+    var body='Hej!\n\nTräningen '+evName+(dateStr?' ('+dateStr+')':'')+' är inställd.\n';
+    if(ev&&ev.info) body+='\n'+ev.info+'\n';
+    body+='\nBerörda åkare:\n';
+    regs.forEach(function(r,i){body+=(i+1)+'. '+r.fname+' '+r.lname+' - Målsman: '+r.guardianFname+' '+r.guardianLname+', '+r.guardianPhone+'\n';});
+    body+='\nMed vänliga hälsningar,\n'+(state.currentUser&&state.currentUser.fname||'')+'\nAST';
+    window.location.href='mailto:?subject='+encodeURIComponent('INSTÄLLD: '+evName)+'&body='+encodeURIComponent(body);
+    await new Promise(function(res){setTimeout(res,800);});
+  } else {
+    if(!confirm('Ta bort denna träning?')) return;
+  }
+  try{
+    var res=await sb.from('events').delete().eq('id',id);
+    if(res.error) throw res.error;
+    await loadAll();
+    showToast('Träning borttagen');
+    showView('view-calendar');
+    renderCalendar();
+    if(state.calView==='list') renderListView();
+  }catch(err){showError('Kunde inte ta bort träningen.');console.error(err);}
+}
+
+function toggleGrp(el){ el.classList.toggle('sel'); document.getElementById('err-grp').textContent=''; }
+
+document.getElementById('ev-from').addEventListener('change',function(){updateRecurPreview();
+  const from=this.value;
+  if(!from) return;
+  const toEl=document.getElementById('ev-to');
+  // max = from + 6 days
+  const maxD=new Date(from);
+  maxD.setDate(maxD.getDate()+6);
+  const maxStr=maxD.toISOString().slice(0,10);
+  toEl.min=from;
+  toEl.max=maxStr;
+  // clamp existing value
+  if(toEl.value&&toEl.value>maxStr) toEl.value=maxStr;
+  if(toEl.value&&toEl.value<from) toEl.value=from;
+});
+
+document.getElementById('ev-info').addEventListener('input',function(){
+  document.getElementById('ev-info-c').textContent=this.value.length;
+});
+
+// ── REGISTRATION ──
+function selectGrp(btn){
+  document.querySelectorAll('.grp-toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('err-grp-reg').textContent='';
+
+  const selectedGrp=btn.dataset.grp;
+  const wrap=document.getElementById('grp-toggle-wrap');
+  const evGroups=JSON.parse(wrap.dataset.evGroups||'[]');
+  const box=document.getElementById('grp-mismatch-box');
+
+  // Check if selected group is NOT in the event's intended groups
+  const isMatch=evGroups.length===0||evGroups.includes(selectedGrp);
+  if(!isMatch){
+    const grpList=evGroups.join(', ');
+    document.getElementById('grp-mismatch-text').textContent=
+      'Denna träning är främst avsedd för '+grpList+'. Du anmäler '+selectedGrp+' — det är tillåtet men hör av dig till arrangören vid frågor.';
+    const organizer=wrap.dataset.evOrganizer;
+    const phone=wrap.dataset.evPhone;
+    const email=wrap.dataset.evEmail;
+    let contact='';
+    if(organizer) contact+=organizer;
+    if(phone) contact+=(contact?' · ':'')+`<a href="tel:${phone}">${phone}</a>`;
+    if(email) contact+=(contact?' · ':'')+`<a href="mailto:${email}">${email}</a>`;
+    document.getElementById('grp-mismatch-contact').innerHTML=contact||'';
+    box.classList.add('show');
+  } else {
+    box.classList.remove('show');
+  }
+}
+
+function toggleSaveSkierCheckbox(){
+  const cb=document.getElementById('reg-save-skier');
+  const box=document.getElementById('save-skier-box');
+  const check=document.getElementById('save-skier-check');
+  const wrap=document.getElementById('save-skier-wrap');
+  if(!cb) return;
+  cb.checked=!cb.checked;
+  console.log('Save skier checkbox:', cb.checked);
+  if(cb.checked){
+    box.style.background='var(--accent)';
+    box.style.borderColor='var(--accent)';
+    check.style.display='block';
+    wrap.style.borderColor='var(--accent)';
+    wrap.style.background='rgba(59,130,246,.08)';
+  } else {
+    box.style.background='none';
+    box.style.borderColor='var(--border2)';
+    check.style.display='none';
+    wrap.style.borderColor='var(--border2)';
+    wrap.style.background='var(--surface2)';
+  }
+}
+
+function openRegModal(eventId){
+  const ev=getEvents().find(e=>e.id===eventId);
+  document.getElementById('reg-ev-id').value=eventId;
+  // store event groups + contact for mismatch check
+  const wrap=document.getElementById('grp-toggle-wrap');
+  wrap.dataset.evGroups=JSON.stringify(ev?ev.groups:[]);
+  wrap.dataset.evOrganizer=ev?ev.organizer||'':'';
+  wrap.dataset.evPhone=ev?ev.phone||'':'';
+  wrap.dataset.evEmail=ev?ev.email||'':'';
+  ['reg-fname-f','reg-lname-f','reg-club-f','reg-guardian-fname','reg-guardian-lname','reg-guardian-phone'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.grp-toggle-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('err-reg').textContent='';
+  document.getElementById('err-grp-reg').textContent='';
+  document.getElementById('grp-mismatch-box').classList.remove('show');
+  var saveCb=document.getElementById('reg-save-skier');
+  if(saveCb) saveCb.checked=false;
+  renderSavedSkiersInModal();
+  document.getElementById('modal-reg').classList.add('open');
+}
+
+async function saveRegistration(){
+  const evId=document.getElementById('reg-ev-id').value;
+  const fname=document.getElementById('reg-fname-f').value.trim();
+  const lname=document.getElementById('reg-lname-f').value.trim();
+  const club=document.getElementById('reg-club-f').value.trim();
+  const gfname=document.getElementById('reg-guardian-fname').value.trim();
+  const glname=document.getElementById('reg-guardian-lname').value.trim();
+  const gphone=document.getElementById('reg-guardian-phone').value.trim();
+  const activeGrp=document.querySelector('#modal-reg .grp-toggle-btn.active');
+  if(!fname||!lname||!club){document.getElementById('err-reg').textContent='Fyll i åkarens namn och klubb.';return;}
+  if(!activeGrp){document.getElementById('err-grp-reg').textContent='Välj åldersgrupp.';return;}
+  if(!gfname||!glname||!gphone){document.getElementById('err-reg').textContent='Fyll i målsmans uppgifter.';return;}
+  const group=activeGrp.dataset.grp;
+  var dup=getRegs().filter(function(r){return r.eventId===evId&&r.fname.toLowerCase()===fname.toLowerCase()&&r.lname.toLowerCase()===lname.toLowerCase();});
+  if(dup.length){document.getElementById('err-reg').textContent=fname+' '+lname+' är redan anmäld till den här träningen.';return;}
+  const saveBtn=document.querySelector('#modal-reg .btn-primary');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='Sparar...';}
+  try{
+    const{error}=await sb.from('registrations').insert({
+      event_id: evId,
+      fname, lname, club,
+      age_group: group,
+      guardian_fname: gfname,
+      guardian_lname: glname,
+      guardian_phone: gphone,
+      created_by: state.currentUser.id,
+    });
+    if(error) throw error;
+    var saveCb2=document.getElementById('reg-save-skier');
+    if(saveCb2&&saveCb2.checked){
+      var existSk=state._savedSkiers.find(function(s){
+        return s.fname.toLowerCase()===fname.toLowerCase()&&s.lname.toLowerCase()===lname.toLowerCase();
+      });
+      if(existSk){
+        showToast(fname+' finns redan i Mina åkare');
+      } else {
+        var skierRes=await sb.from('saved_skiers').insert({
+          owner_id:state.currentUser.id,
+          fname:fname,lname:lname,club:club,age_group:group,
+          guardian_fname:gfname,guardian_lname:glname,guardian_phone:gphone
+        }).select();
+        if(skierRes.error){
+          console.error('save skier error:',skierRes.error);
+          showError('Åkaren anmäldes men kunde inte sparas i Mina åkare: '+skierRes.error.message);
+        } else {
+          await loadSavedSkiers();
+          showToast('✅ '+fname+' sparad i Mina åkare!');
+        }
+      }
+    }
+    await loadRegs();
+    closeModal('modal-reg');
+    showToast(fname+' anmäld!');
+    openEventDetail(evId);
+  }catch(err){
+    document.getElementById('err-reg').textContent='Kunde inte spara. Försök igen.';
+    console.error('saveReg:',err);
+  }finally{
+    if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='Anmäl åkare';}
+  }
+}
+
+function emailParticipants(evId){
+  var ev=getEvents().find(function(e){return e.id===evId;});
+  var regs=getRegs().filter(function(r){return r.eventId===evId;});
+  if(!regs.length){showToast('Inga anmälda ännu');return;}
+  var dateStr=(ev&&ev.from||'')+(ev&&ev.from!==ev.to?' - '+ev.to:'');
+  var body='Hej!\n\nInformation om träningen '+(ev&&(ev.venue||ev.organizer)||'')+' '+dateStr+'.\n';
+  if(ev&&ev.phone) body+='Telefon: '+ev.phone+'\n';
+  if(ev&&ev.email) body+='E-post: '+ev.email+'\n';
+  if(ev&&ev.whatsapp) body+='WhatsApp: '+ev.whatsapp+'\n';
+  if(ev&&ev.info) body+='\n'+ev.info+'\n';
+  body+='\nAnmälda åkare ('+regs.length+' st):\n';
+  regs.forEach(function(r,i){body+=(i+1)+'. '+r.fname+' '+r.lname+' ('+(r.group||'')+') - '+(r.club||'')+'\nMålsman: '+r.guardianFname+' '+r.guardianLname+', '+r.guardianPhone+'\n';});
+  body+='\nMed vänliga hälsningar,\n'+(state.currentUser&&state.currentUser.fname||'')+'\nAST - Alpin Samverkanssträning';
+  window.location.href='mailto:?subject='+encodeURIComponent('Information - '+(ev&&(ev.venue||ev.organizer)||'AST'))+' &body='+encodeURIComponent(body);
+  showToast('Mailet förbereds i din e-postklient');
+}
+async function deleteReg(regId,evId){
+  if(!confirm('Ta bort anmälan?')) return;
+  await sb.from('registrations').delete().eq('id', regId);
+  await loadRegs();
+  showToast('Anmälan borttagen');
+  openEventDetail(evId);
+}
+
+// ── GROUP COLORS FOR PILLS ──
+const GRP_PILL={
+  U8:{bg:'#1e3a5f',text:'#93c5fd'},
+  U10:{bg:'#1d4ed8',text:'#bfdbfe'},
+  U12:{bg:'#15803d',text:'#bbf7d0'},
+  U14:{bg:'#b91c1c',text:'#fecaca'},
+  U16:{bg:'#334155',text:'#cbd5e1'},
+  'U17+':{bg:'#3b0764',text:'#e9d5ff'},
+};
+function grpPill(g){const c=GRP_PILL[g]||{bg:'#334155',text:'#cbd5e1'};return `<span class="grp-pill" style="background:${c.bg};color:${c.text}">${g}</span>`;}
+
+// ── ADMIN VIEW ──
+async function renderAdmin(){
+  const u=state.currentUser;
+  const body=document.getElementById('admin-body');
+  if(!u){ body.innerHTML='<p style="color:var(--muted);padding:1rem">Logga in för att se kontosidan.</p>'; return; }
+
+  body.innerHTML='<p style="color:var(--muted);padding:1rem;font-size:13px">Laddar...</p>';
+
+  // Refresh saved skiers with visible error handling
+  try{
+    const res=await sb.from('saved_skiers').select('*')
+      .eq('owner_id',state.currentUser.id).order('fname');
+    if(res.error) throw res.error;
+    state._savedSkiers=res.data||[];
+  }catch(e){
+    console.error('loadSavedSkiers error:',e);
+    state._savedSkiers=[];
+  }
+
+  // Fetch all users (admin only)
+  let allUsers=[];
+  if(u.role==='admin'){
+    try{
+      const res=await sb.from('profiles').select('id,fname,lname,club,role,created_at');
+      if(!res.error) allUsers=res.data||[];
+    }catch(e){ console.error('profiles error:',e); }
+  }
+
+  const events=getEvents().sort((a,b)=>a.from.localeCompare(b.from));
+  const regs=getRegs();
+  const mySkiers=state._savedSkiers;
+
+  // ── Mina åkare ──
+  let skiersSection;
+  if(!mySkiers.length){
+    skiersSection='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:2rem">'
+      +'<div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:.5rem">Mina åkare (0)</div>'
+      +'<p style="font-size:13px;color:var(--muted);line-height:1.6">Inga sparade åkare ännu.<br>Kryssa i <strong style="color:var(--text)">Spara åkaren</strong> när du anmäler för att spara dem här.</p>'
+      +'</div>';
+  } else {
+    let rows=mySkiers.map(function(s){
+      const ini=((s.fname||'')[0]||'').toUpperCase()+((s.lname||'')[0]||'').toUpperCase();
+      return '<div class="my-skier-card">'
+        +'<div class="my-skier-avatar">'+ini+'</div>'
+        +'<div class="my-skier-info">'
+          +'<div class="my-skier-name">'+esc(s.fname)+' '+esc(s.lname)
+            +' <span style="font-family:var(--font-head);font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:2px 7px;color:var(--accent);margin-left:4px">'+esc(s.age_group)+'</span>'
+          +'</div>'
+          +'<div class="my-skier-sub">'+esc(s.club)+' &middot; Målsman: '+esc(s.guardian_fname)+' '+esc(s.guardian_lname)+' &middot; '+esc(s.guardian_phone)+'</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+          +'<button data-sid="'+s.id+'" onclick="openEditSkier(this.dataset.sid)" class="btn btn-ghost btn-sm">Redigera</button>'
+          +'<button data-sid="'+s.id+'" onclick="deleteSavedSkier(this.dataset.sid)" class="btn btn-danger btn-sm">Ta bort</button>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+    skiersSection='<div style="margin-bottom:2rem">'
+      +'<div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:.75rem">Mina åkare ('+mySkiers.length+')</div>'
+      +'<p style="font-size:12px;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Privata uppgifter kopplade till ditt konto — bara du ser dem.</p>'
+      +rows
+      +'</div>';
+  }
+
+  // ── Mina träningar ──
+  const visibleEvents=u.role==='admin'?events:events.filter(function(e){return e.createdBy===u.id;});
+  let evHtml;
+  if(!visibleEvents.length){
+    evHtml='<p style="font-size:13px;color:var(--muted);padding:.5rem 0">Inga träningar ännu.</p>';
+  } else {
+    evHtml=visibleEvents.map(function(ev){
+      const evRegs=regs.filter(function(r){return r.eventId===ev.id;});
+      return '<div class="list-ev-card" data-evid="'+ev.id+'" onclick="openEventDetail(this.dataset.evid)" style="cursor:pointer;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+          +'<div style="min-width:0">'
+            +'<div style="font-weight:500;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(ev.organizer||ev.venue||'Träning')+'</div>'
+            +'<div style="font-size:12px;color:var(--muted);margin-top:2px">'+ev.from+(ev.from!==ev.to?' – '+ev.to:'')+' &middot; '+esc(ev.groups.join(', '))+'</div>'
+          +'</div>'
+          +'<span style="font-family:var(--font-head);font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;flex-shrink:0">'+evRegs.length+' anmälda</span>'
+        +'</div>'
+      +'</div>';
+    }).join('');
+  }
+
+  // ── Användarhantering (admin only) ──
+  let usersHtml='';
+  // ── Club registry (admin only) ──
+  var clubsSection='';
+  if(u.role==='admin'){
+    var clubRows=_clubs.map(function(name){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border)">'
+        +'<span style="font-size:14px;color:var(--text)">'+esc(name)+'</span>'
+        +'<button data-cname="'+esc(name)+'" onclick="deleteClub(this.dataset.cname)" class="btn btn-danger btn-sm">Ta bort</button>'
+        +'</div>';
+    }).join('');
+    clubsSection='<div style="margin-bottom:2rem">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">'
+        +'<div style="font-family:var(--font-head);font-weight:700;font-size:16px">Klubbregister ('+_clubs.length+')</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:.75rem">'
+        +'<input id="new-club-input" class="form-input" type="text" placeholder="Klubbnamn..." style="flex:1;padding:8px 12px;font-size:13px" oninput="updateClubHint()">'
+        +'<button onclick="addClubFromInput()" class="btn btn-primary btn-sm" style="white-space:nowrap">+ Lägg till</button>'
+      +'</div>'
+      +'<div id="club-match-hint" style="font-size:12px;color:var(--accent);margin-bottom:.5rem;min-height:18px"></div>'
+      +(_clubs.length
+        ? '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">'+clubRows+'</div>'
+        : '<p style="font-size:13px;color:var(--muted)">Inga klubbar registrerade ännu.</p>')
+      +'</div>';
+  }
+
+  if(u.role==='admin' && allUsers.length){
+    let userRows=allUsers.map(function(au){
+      return '<tr>'
+        +'<td>'
+          +'<div style="font-size:14px;font-weight:500;color:var(--text)">'+esc(au.fname)+' '+esc(au.lname)+'</div>'
+          +'<div style="font-size:12px;color:var(--muted)">'+esc(au.club)+'</div>'
+        +'</td>'
+        +'<td><span class="badge '+(au.role==='admin'?'badge-admin':'')+'" style="'+(au.role==='admin'?'':'background:var(--surface2);color:var(--muted)')+'">'+au.role+'</span></td>'
+        +'<td style="white-space:nowrap">'
+          +'<button data-uid="'+au.id+'" onclick="openEditUser(this.dataset.uid)" class="btn btn-ghost btn-sm" style="margin-right:4px">Redigera</button>'
+          +'<button data-uid="'+au.id+'" onclick="toggleRole(this.dataset.uid)" class="btn btn-ghost btn-sm">'+(au.role==='admin'?'→ Användare':'→ Admin')+'</button>'
+        +'</td>'
+      +'</tr>';
+    }).join('');
+    usersHtml='<div style="margin-top:2rem;margin-bottom:2rem">'
+      +'<div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:.75rem">Användare ('+allUsers.length+')</div>'
+      +'<div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Namn &amp; Klubb</th><th>Roll</th><th></th></tr></thead><tbody>'+userRows+'</tbody></table></div>'
+      +'</div>';
+  }
+
+  body.innerHTML=
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem;flex-wrap:wrap">'
+      +'<div class="admin-title" style="margin:0">'+(u.role==='admin'?'Admin-panel':'Mitt konto')+'</div>'
+      +(u.role==='admin'?'<span class="badge badge-admin">Admin</span>':'')
+    +'</div>'
+    +'<div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">'+esc(u.fname)+' '+esc(u.lname)+' &middot; '+esc(u.club)+' &middot; '+esc(u.email)+(u.phone?' &middot; '+esc(u.phone):'')+'</div>'
+    +skiersSection
+    +'<div style="margin-bottom:2rem">'
+      +'<div style="font-family:var(--font-head);font-weight:700;font-size:16px;margin-bottom:.75rem">'+(u.role==='admin'?'Alla träningar':'Mina träningar')+' ('+visibleEvents.length+')</div>'
+      +evHtml
+    +'</div>'
+    +clubsSection
+    +usersHtml;
+}
+
+
+async function toggleRole(userId){
+  const { data: prof } = await sb.from('profiles').select('role').eq('id', userId).single();
+  if(!prof) return;
+  const newRole = prof.role==='admin'?'user':'admin';
+  await sb.from('profiles').update({ role: newRole }).eq('id', userId);
+  if(state.currentUser.id===userId) state.currentUser.role=newRole;
+  showToast('Roll uppdaterad');
+  renderAdmin();
+}
+
+// ── MODAL HELPERS ──
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+// ── TOAST ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+
+// Reposition bars on resize
+
+// ── WELCOME SCREEN ──
+function dismissWelcome(){
+  try{ localStorage.setItem('ast_welcomed','1'); }catch(e){}
+  showView('view-login');
+}
+
+// ── BOOT ──
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const ok = await loadSession();
+  if(ok){
+    await loadAll();
+    initApp();
+  } else {
+    // Show welcome screen on first visit
+    var welcomed = false;
+    try{ welcomed = !!localStorage.getItem('ast_welcomed'); }catch(e){}
+    if(!welcomed){
+      showView('view-welcome');
+    } else {
+      showView('view-login');
+    }
+  }
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      const newPw=prompt('Ange ditt nya lösenord:');
+      if(newPw){
+        const { error }=await sb.auth.updateUser({ password: newPw });
+        if(!error) alert('Lösenordet är uppdaterat! Logga in med det nya lösenordet.');
+      }
+    }
+  });
+});
+</script>
+<!-- REDIGERA ANVÄNDARE MODAL (admin) -->
+<div class="overlay" id="modal-edit-user">
+<div class="modal">
+  <div class="modal-head">
+    <span class="modal-title">Redigera användare</span>
+    <button class="close-x" onclick="closeModal('modal-edit-user')">&#10005;</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="edit-user-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="form-label">Förnamn</label><input id="edit-user-fname" class="form-input" type="text"></div>
+      <div><label class="form-label">Efternamn</label><input id="edit-user-lname" class="form-input" type="text"></div>
+    </div>
+    <div><label class="form-label">Klubb</label><input id="edit-user-club" class="form-input" type="text" list="clubs-list"></div>
+    <div>
+      <label class="form-label">Roll</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button id="role-btn-user" class="btn btn-ghost" onclick="setEditUserRole('user')" style="flex:1">Användare</button>
+        <button id="role-btn-admin" class="btn btn-ghost" onclick="setEditUserRole('admin')" style="flex:1">Admin</button>
+      </div>
+    </div>
+    <div class="err" id="err-edit-user"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal('modal-edit-user')">Avbryt</button>
+    <button class="btn btn-primary" onclick="saveEditUser()">Spara</button>
+  </div>
+</div>
+</div>
+
+<!-- REDIGERA ÅKARE MODAL -->
+<div class="overlay" id="modal-edit-skier">
+<div class="modal">
+  <div class="modal-head">
+    <span class="modal-title">Redigera åkare</span>
+    <button class="close-x" onclick="closeModal('modal-edit-skier')">✕</button>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="edit-skier-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="form-label">Förnamn</label><input id="edit-skier-fname" class="form-input" type="text"></div>
+      <div><label class="form-label">Efternamn</label><input id="edit-skier-lname" class="form-input" type="text"></div>
+    </div>
+    <div><label class="form-label">Klubb</label><input id="edit-skier-club" class="form-input" type="text" list="clubs-list"></div>
+    <div>
+      <label class="form-label">Åldersgrupp</label>
+      <div class="grp-toggle" style="margin-top:4px">
+        <button class="grp-toggle-btn" data-grp="U8" onclick="selectEditGrp(this)">U8</button>
+        <button class="grp-toggle-btn" data-grp="U10" onclick="selectEditGrp(this)">U10</button>
+        <button class="grp-toggle-btn" data-grp="U12" onclick="selectEditGrp(this)">U12</button>
+        <button class="grp-toggle-btn" data-grp="U14" onclick="selectEditGrp(this)">U14</button>
+        <button class="grp-toggle-btn" data-grp="U16" onclick="selectEditGrp(this)">U16</button>
+        <button class="grp-toggle-btn" data-grp="U17+" onclick="selectEditGrp(this)">U17+</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-family:var(--font-head);margin-bottom:.75rem">Målsman</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="form-label">Förnamn</label><input id="edit-skier-gfname" class="form-input" type="text"></div>
+        <div><label class="form-label">Efternamn</label><input id="edit-skier-glname" class="form-input" type="text"></div>
+      </div>
+      <div><label class="form-label">Telefon</label><input id="edit-skier-gphone" class="form-input" type="tel"></div>
+    </div>
+    <div class="err" id="err-edit-skier"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal('modal-edit-skier')">Avbryt</button>
+    <button class="btn btn-primary" onclick="saveEditSkier()">Spara ändringar</button>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
