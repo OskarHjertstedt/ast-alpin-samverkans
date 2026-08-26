@@ -940,7 +940,7 @@ textarea{resize:vertical;min-height:70px;max-height:110px}
     <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Dina r&auml;ttigheter (GDPR)</div>
     <p style="font-size:13px;color:var(--muted)">Du kan n&auml;r som helst radera ditt konto och all data via Konto-sidan. Du har r&auml;tt till r&auml;ttelse och tillg&aring;ng till dina uppgifter.</p>
     <div style="font-size:14px;font-weight:500;margin:.75rem 0 .25rem">Lagring</div>
-    <p style="font-size:13px;color:var(--muted)">Data lagras hos Supabase i EU (Irland). Appen hostas p&aring; Netlify.</p>
+    <p style="font-size:13px;color:var(--muted)">Data lagras på egen server, inte hos Supabase.</p>
   </div>
   <div class="modal-foot"><button class="btn btn-primary" onclick="closeModal('modal-privacy')">St&auml;ng</button></div>
 </div>
@@ -1010,9 +1010,9 @@ const MONTHS = ['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti
 const DAYS = ['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
 const GRP_COLORS = {U10:'#3b82f6',U12:'#22c55e',U14:'#ef4444',U16:'#94a3b8'};
 
-// ── SUPABASE CONFIG ──
-const SUPABASE_URL = 'https://bvgwruoyydjiiboasbkt.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_ioiQN45IPXHP8J3-srVtWQ_KFiAPQbJ';
+// ── SUPABASE CONFIG (self-hosted, migrerad från Supabase Cloud 2026-08-26) ──
+const SUPABASE_URL = 'https://supabase.astalpin.se';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg3NzU2NjEyLCJleHAiOjE5NDU0MzY2MTJ9.CH_tTLrvbwIvuY2s1YEE3FnofkhzSzAic7XMxaJ46CU';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

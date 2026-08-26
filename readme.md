@@ -1,6 +1,6 @@
 # AST — Alpin Samverkansträning
 
-Detta projekt är en liten webbapplikation för att hantera träningspass, anmälningar och administrering för Alpin Samverkansträning. Appen är byggd som en enkel statisk frontend i HTML/CSS/JavaScript och använder Supabase som autentisering och databas.
+Detta projekt är en liten webbapplikation för att hantera träningspass, anmälningar och administrering för Alpin Samverkansträning. Appen är byggd som en enkel statisk frontend i HTML/CSS/JavaScript och använder en self-hostad Supabase-stack (Postgres + Auth + REST + Realtime, egen drift på produktionsservern) som autentisering och databas — migrerad från Supabase Cloud 2026-08-26.
 
 ## Innehåll
 
@@ -26,11 +26,10 @@ Applikationen gör att användare kan:
 
 ## Teknologier
 
-- Supabase Auth
-- Supabase Postgres
+- Self-hostad Supabase-stack (GoTrue/Auth, PostgREST, Realtime, Postgres, Envoy-gateway) — drivs som eget compose-projekt i `/home/ubuntu/docker/astalpin-supabase/` på produktionsservern, se dess `BACKUP.md`
 - Row Level Security (RLS)
 - Vanilla JavaScript + HTML + CSS
-- Statisk hosting (t.ex. Netlify)
+- Statisk hosting via egen nginx-container bakom Caddy
 
 ## Datamodell
 
@@ -51,35 +50,39 @@ Det finns även:
 
 ## Hur projektet körs
 
-### 1. Skapa ett Supabase-projekt
+### 1. Backend: self-hostad Supabase-stack
 
-1. Logga in på Supabase.
-2. Skapa ett nytt projekt.
-3. Kopiera projekt-URL och anon key.
+Databasen körs INTE längre i Supabase Cloud. Den är ett eget compose-projekt
+`/home/ubuntu/docker/astalpin-supabase/` på produktionsservern (192.168.50.7):
+Postgres + GoTrue (Auth) + PostgREST + Realtime + Envoy-gateway, exponerad via
+Caddy på **`https://supabase.astalpin.se`**.
 
-### 2. Databasen finns redan
+`AST-supabase-setup.sql` är historiskt (Supabase Cloud-eran) och redan
+divergerat från det skarpa schemat (t.ex. saknar tabellen `clubs`) — använd
+det INTE som facit. Skavägen till schemat är nu produktionsdatabasen själv;
+ändringar görs med riktade `ALTER`-satser, aldrig genom att köra om hela filen.
 
-Detta projekt förutsätter att databasen redan finns i Supabase.
+VIKTIGT: kör aldrig `docker compose down -v` eller motsvarande mot detta
+projekt utan en färsk backup — det är nu den enda källan till appens data.
 
-VIKTIGT: kör INTE SQL-filen igen i en befintlig databas om den redan är uppsatt. Att köra den igen kan skapa dubbletter av tabeller, policy-regler, trigger och andra konstruktioner och skriva över befintlig data eller konfiguration.
-
-`AST-supabase-setup.sql` är ett setupdokument för en ny installation eller för att jämföra/validera schema. Om databasen redan är aktiv ska du kontrollera att den matchar applikationens förväntningar och eventuellt applicera enskilda ändringar manuellt utan att återinitiera hela databasen.
-
-### 3. Konfigurera frontend
+### 2. Konfigurera frontend
 
 I `index.html` finns konfigurationen:
 
 ```js
-const SUPABASE_URL = 'https://...supabase.co';
+const SUPABASE_URL = 'https://supabase.astalpin.se';
 const SUPABASE_ANON_KEY = '...';
 ```
 
-Uppdatera dessa värden så att de matchar ditt Supabase-projekt.
+Dessa pekar redan mot produktionens self-hostade stack. Ändra bara om en ny
+instans (t.ex. en testmiljö) ska användas.
 
-### 4. Drift
+### 3. Drift
 
-Appen körs som en Docker-container (`nginx` som serverar `index.html`) på
+Frontend körs som en Docker-container (`nginx` som serverar `index.html`) på
 produktionsservern (192.168.50.7), bakom Caddy på domänen **astalpin.se**.
+Backend (self-hostad Supabase) körs som ett separat compose-projekt på samma
+server, se ovan.
 
 - `Dockerfile` / `nginx.conf` — bygger en statisk nginx-image av `index.html`
 - `docker-compose.yml` — service `app`, container `astalpin-app`, nätverk `caddy_net`
@@ -90,8 +93,11 @@ produktionsservern (192.168.50.7), bakom Caddy på domänen **astalpin.se**.
   ./deploy.sh --status     # visar driftstatus
   ./deploy.sh --rollback   # återställer föregående version
   ```
-- Caddy-konfiguration: `/home/ubuntu/docker/caddy-edge/conf.d/51-astalpin.se.conf`
-  (TLS via ACME/TLS-ALPN, proxar till `astalpin-app:80`)
+- Caddy-konfiguration:
+  - Frontend: `/home/ubuntu/docker/caddy-edge/conf.d/51-astalpin.se.conf`
+    (TLS via ACME/TLS-ALPN, proxar till `astalpin-app:80`)
+  - Backend: `/home/ubuntu/docker/caddy-edge/conf.d/52-supabase.astalpin.se.conf`
+    (TLS via ACME/TLS-ALPN, proxar till `astalpin-supabase-envoy:8000`)
 - Övervakas i Uptime Kuma (se `~/sites/kuma/tools/monitors.json`)
 - Se `BACKUP.md` för vad som täcks (och inte täcks) av masterbackup
 
@@ -162,14 +168,14 @@ Projektet inkluderar flera säkerhetsåtgärder:
 
 ## Vanliga saker att kontrollera
 
-- Supabase URL och anon key är korrekt inställda
+- `SUPABASE_URL`/`SUPABASE_ANON_KEY` i `index.html` pekar mot `supabase.astalpin.se`
 - databasen redan finns och ska inte återinitieras eller skrivas över
-- schema matchar aktuell app-version, utan att köra hela setup-SQL igen mot en befintlig databas
+- schema matchar aktuell app-version — ändra med riktade `ALTER`-satser, aldrig genom att köra om `AST-supabase-setup.sql` (den är föråldrad, se ovan)
 - RLS är aktiverat på tabellerna
 - admin-koden har lagts in i `app_secrets`
 - `auth.users` och `public.profiles` är i sync
 
-> Om databasen redan är igång i Supabase: gör inga "reset" eller "recreate"-kommandon i SQL Editor. Använd istället riktade ändringar eller jämförelse mot befintligt schema.
+> Databasen körs nu i vår egen self-hostade stack, inte i Supabase Cloud. Gör inga `docker compose down -v`, "reset" eller motsvarande destruktiva kommandon mot `/home/ubuntu/docker/astalpin-supabase/` utan en färsk backup. Använd riktade ändringar eller jämförelse mot befintligt schema.
 
 ## Utvecklingsnotering
 

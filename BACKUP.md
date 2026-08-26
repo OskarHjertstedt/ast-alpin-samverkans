@@ -1,17 +1,18 @@
 # Backup — astalpin.se
 
 ## Databas
-Ingen lokal databas i denna stack. All data (auth, `events`, `registrations`,
-`saved_skiers`, `app_secrets` m.fl.) ligger i ett externt Supabase-projekt,
-se `AST-supabase-setup.sql` för schema.
+Ingen lokal databas i DENNA stack (frontend). Databasen migrerades 2026-08-26
+från Supabase Cloud till en self-hostad Supabase-stack i ett eget
+compose-projekt: `/home/ubuntu/docker/astalpin-supabase/` (egen `BACKUP.md`
+där). All data (auth, `events`, `registrations`, `saved_skiers`,
+`app_secrets`, `clubs` m.fl.) ligger där, i containern
+`astalpin-supabase-db` (officiell `supabase/postgres`-image, standard
+`POSTGRES_*`-env) — täcks alltså av masterbackups vanliga 6-timmars
+DB-dumpschema.
 
-Detta betyder:
-- `ops/backup-databases.sh` på produktionsservern hittar ingen databas här och
-  ska inte förväntas dumpa något för denna site.
-- Supabase-projektets data täcks **inte** av masterbackup. Backup av
-  Supabase-data (t.ex. schemalagda dumpar eller Supabases egna
-  point-in-time-recovery) hanteras separat i Supabase-projektet, utanför
-  denna repos ansvar.
+`AST-supabase-setup.sql` i det här repot är historiskt (Supabase Cloud-eran)
+och redan divergerat från det skarpa schemat — facit är produktionsdatabasen
+själv, inte den filen.
 
 ## Filer / container
 Denna stack är stateless (statisk nginx-container, ingen bind-mount med
