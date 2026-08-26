@@ -130,6 +130,9 @@ python3 -m http.server 8000
 - användare kan anmäla deltagare till ett träningspass
 - data lagras i `public.registrations`
 - listor kan visas i adminvy
+- den som anmäler får ett bekräftelsemejl (Postgres-trigger `on_registration_created_send_confirmation`
+  → Edge Function `send-registration-confirmation` i den self-hostade
+  Supabase-stacken, se `/home/ubuntu/docker/astalpin-supabase/volumes/functions/`)
 
 ### Sparade åkare
 

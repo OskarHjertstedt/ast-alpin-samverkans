@@ -1351,7 +1351,7 @@ async function doRegister(){
     const needsConfirm=data?.user&&!data?.session;
     if(needsConfirm){
       setMsg('reg-msg',
-        '✅ Konto skapat! Kolla din inkorg ('+email+') och klicka på bekräftelselänken för att aktivera kontot.',
+        '✅ Konto skapat! Kolla din inkorg ('+email+') och klicka på bekräftelselänken för att aktivera kontot. Hittar du inget mejl inom någon minut, kolla även skräpposten.',
         true);
       return;
     }
