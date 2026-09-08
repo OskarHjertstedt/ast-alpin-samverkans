@@ -1,7 +1,7 @@
 <!-- GENERERAD FIL — redigera inte direkt. Källa: ~/sites/instruktioner.sh -->
 # Infrastruktur — Gemensamma regler för alla projekt
 
-> **Instruktionsversion 1.12.0** · genererad 2026-09-06 22:07
+> **Instruktionsversion 1.14.0** · genererad 2026-09-07 22:47
 >
 > Denna fil genereras automatiskt och skrivs över vid varje körning av
 > `~/sites/instruktioner.sh`. **Redigera den aldrig direkt** — förbättringar
@@ -235,7 +235,9 @@ Detta avsnitt handlar om att köra automatiserade tester (Jest/etc.) — inte om
 - **Fråga om säljmaterialet:** i samband med release-commiten ska det alltid ställas en fråga om appens säljblad ska uppdateras med releasens nyheter — se avsnittet "Säljmaterial" nedan.
 
 ## Dokumentation — obligatoriskt vid varje ändring
-- Teknisk dokumentation ska alltid uppdateras när kod ändras. Om teknisk dokumentation saknas för det du ändrar/skapar, skapa den — anta inte att avsaknad dokumentation betyder att den inte behövs.
+- Teknisk dokumentation ska alltid uppdateras när kod ändras. Ändras
+  databasschemat gäller dessutom Datamodell-avsnittet nedan; ändras ett API
+  gäller API-avsnittet. Om teknisk dokumentation saknas för det du ändrar/skapar, skapa den — anta inte att avsaknad dokumentation betyder att den inte behövs.
 - Varje förändring (ny funktion, ändrat beteende, borttagen funktionalitet) ska speglas i dokumentationen samma release, inte skjutas upp.
 - End-user-dokumentation (hjälptexter, guider, ev. FAQ) ska hållas uppdaterad parallellt med den tekniska dokumentationen — om en ändring påverkar hur en användare interagerar med appen, uppdatera end-user-dokumentationen i samma release.
 - Manualer och guider ska förses med skärmdumpar där det är relevant, samt länkar för smidig navigation mellan avsnitt/sidor i dokumentationen.
@@ -290,6 +292,112 @@ Varje app ska exponera två endpoints. De är inte features utan kontraktet som 
 - **`/version.json`**: aktuell version och byggtidpunkt. Deployverifieringen läser den ("vänta tills version.json visar X, kontrollera hälsan"), och hälsomätning under deploy förutsätter att den finns.
 
 Utan kontraktet övervakas "svarar startsidan 200" — vilket var sant för flera appar medan deras API:er kunde vara döda.
+
+## Datamodell — dokumenterad och levande i varje app
+Varje app ska ha en **dokumenterad datamodell** (`docs/datamodell.md` eller
+motsvarande) som uppdateras i SAMMA release som schemat ändras. Ett schema
+säger vilka kolumner som finns; dokumentet säger vad de betyder och hur
+tabellerna hänger ihop. Den som tar över appen ska kunna läsa datamodellen
+och förstå verksamheten, utan att först läsa all kod.
+
+För experiment-, test- och arkivmappar är detta frivilligt.
+
+### Vad dokumentet ska innehålla
+- **Varje modell/tabell med sitt syfte** i en mening — vad den representerar i
+  verkligheten, inte vad den heter.
+- **Fälten som inte är självklara.** Typerna står redan i schemat; skriv
+  betydelsen, enheten, och vad `null` betyder (saknas ≠ noll ≠ nej).
+- **Relationerna och vad som händer vid radering** (kaskad, `SetNull`,
+  restriktion). Det är här data försvinner tyst när någon inte visste.
+- **Unika nycklar och vad de skyddar mot** — t.ex. att normaliserat
+  organisationsnummer är unikt per tenant för att stoppa dubbletter.
+- **Enum-värden med innebörd.** `ACCEPTED` och `RESOLVED` ser lika ut i koden
+  men betyder olika saker för verksamheten.
+- **Vilka fält som bär persondata**, så GDPR-export och radering går att
+  stämma av mot modellen i stället för mot minnet (se GDPR-avsnittet).
+- **Ett ER-diagram** där det går att generera (t.ex. mermaid `erDiagram`) —
+  genererat, inte handritat, annars driver det isär.
+
+Fältkommentarer i schemat (Prisma `///`, SQL `COMMENT ON`) är förstahandsvalet
+för *varför ett fält finns*: de ligger bredvid fältet och syns i samma diff.
+Dokumentet ger överblicken — hur delarna hänger ihop.
+
+### Checklistan när en ny modell läggs till
+En ny tabell är inte klar när migrationen kört. Gå igenom:
+
+1. **Radering och export (GDPR):** ingår den i kontokraderingen och i
+   dataexporten? En modell som glöms här blir kvarlämnad persondata.
+2. **Sammanslagning och andra massoperationer:** har appen en "slå ihop
+   dubbletter"-funktion, måste den nya modellen med i listan.
+3. **Backup:** täcks den av masterbackup (ligger den i rätt databas)?
+4. **API:t:** ska den nya datan gå att nå programmatiskt (se API-avsnittet)?
+5. **Dokumentationen:** datamodellen uppdateras i samma release.
+
+Punkt 1 och 2 är de som faktiskt smäller. **Skriv ett test som jämför listorna
+mot schemat** i stället för att lita på minnet — en modell med främmande
+nyckel som saknas i sammanslagningen raderas tyst när två poster slås ihop,
+och det upptäcks först när någons data är borta. Ett sådant test fångade
+exakt det i Custio 2026-09-07, samma dag modellen skrevs.
+
+## API och webhooks — standard i varje app med riktiga användare
+Varje app med riktiga användare ska ha ett **anropbart API** och **utgående
+webhooks**. Appens funktioner ska gå att nå programmatiskt, inte bara via
+UI:t — det är förutsättningen för integrationer, automatisering och
+MCP-anslutningar. För experiment-, test- och arkivmappar är detta frivilligt.
+
+### API:t
+- **Appens kärnfunktioner ska vara nåbara via ett dokumenterat API** (REST/JSON
+  under `/api/...`), med samma valideringar och behörighetskontroller som UI:t.
+  Interna endpoints som bara appens egen frontend använder räknas inte som
+  detta API förrän de är dokumenterade och stabila nog att anropa utifrån.
+- **API:t följer med funktionerna — i samma release.** En ny funktion är inte
+  klar förrän den också är nåbar via API:t. Samma princip som dokumentation
+  och policydokument: aldrig "läggs till sen", för sen blir aldrig. Rent
+  UI-kosmetik behöver förstås inget API.
+- **API-dokumentationen uppdateras i samma release** som API:t ändras —
+  helst en genererad OpenAPI-spec ur koden (ett underhållsställe), annars en
+  docs-sida som ingår i releasens diff. En odokumenterad endpoint finns inte
+  för den som integrerar.
+- **Dokumentationen ska räcka för att integrera utan att läsa koden.** Per
+  endpoint: metod och väg, vad den gör, vilken behörighet den kräver,
+  parametrar och body med vilka som är obligatoriska, ett exempelanrop med
+  exempelsvar, samt **felkoderna och vad de betyder** — "finns inte", "kvoten
+  är slut" och "saknar behörighet" är olika besked och ska inte alla bli
+  \`500\`. Ange också gränser: rate limit, sidstorlek, maxlängder.
+- **Datatyperna i API:t ska gå att slå upp i datamodellen** (se avsnittet
+  ovan). Ett fält som heter samma sak i API:t och i databasen ska betyda samma
+  sak — gör det inte det, skriv ut skillnaden.
+- **Versionera från start** (`/api/v1/...`) och håll kontraktet: en klient
+  ska tåla att ligga EN version efter (jfr PWA-avsnittet). Breaking changes
+  kräver ny version + rollback-beskrivning (jfr Rollback-avsnittet).
+- **Autentisering med API-nycklar** per användare: skapas och återkallas i
+  appens inställningar, lagras hashade i databasen, skickas som
+  `Authorization: Bearer ...`. Sessionscookies är för webbläsaren — aldrig
+  API-auth. Strikt rate limit per nyckel, och nyckelns behörighet är aldrig
+  vidare än användarens egen.
+- **Finns en MCP-server ska den vara ett tunt lager ovanpå samma API** —
+  aldrig en parallell logikväg som driver isär (samma regel som ETT
+  policydokument: en källa, inte två som divergerar).
+
+### Webhooks (utgående)
+- Appen ska kunna **skicka webhooks vid viktiga händelser** (skapat/ändrat/
+  raderat i kärnobjekten, statusbyten) till URL:er användaren registrerar i
+  inställningarna, med val av vilka händelser som prenumereras.
+- **Signera varje leverans** med HMAC (delad hemlighet som visas EN gång vid
+  registrering) så mottagaren kan verifiera avsändaren. Payload innehåller
+  händelsetyp, tidpunkt och objektet — aldrig hemligheter eller andra
+  användares data.
+- **Leveranser får aldrig fälla appen:** skicka asynkront (kö/efterhand),
+  timeout på några sekunder, omförsök med backoff, och inaktivera endpoints
+  som failar konsekvent (samma städprincip som döda push-prenumerationer).
+  Ett webhook-fel loggas — det stoppar aldrig den handling som utlöste det.
+- **Leveranslogg** per endpoint (senaste försök, svarskod) synlig för
+  användaren, så "varför kom inget?" går att besvara utan serveråtkomst.
+
+Vid NYBYGGE ingår API-struktur, nyckelhantering och webhook-grunden i
+scaffoldingen, precis som i18n och mörkt läge. Befintliga appar kompletteras
+successivt — men fråga Pierre innan en stor engångsinsats påbörjas; det är
+ett eget arbete, inte något som smygs in i en annan release.
 
 ## PWA-uppdatering — skydd mot inaktuella klienter
 En PWA som cachar lämnar användare på gammal kod i dagar: de rapporterar buggar som redan är rättade, och gamla klienter pratar med nya API:er.
