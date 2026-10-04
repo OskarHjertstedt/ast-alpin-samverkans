@@ -1,3 +1,8 @@
 .env
 .env.*
 .deploy.log
+
+# Genererade infrainstruktioner (~/sites/instruktioner.sh) hör inte hemma i publika repon
+.github/copilot-instructions*.md
+.github/instructions/infra-*
+CLAUDE.md
